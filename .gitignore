@@ -46,3 +46,14 @@ tmp/
 # Malware samples (never commit)
 src/testing/test-data/malware-samples/**
 !src/testing/test-data/malware-samples/.gitkeep
+
+# Docs
+MASTER_PROMPT.md
+PRD.md
+BACKLOG.md
+ARCHITECTURE.md
+THREAT-MODEL.md
+BENCHMARKS.md
+PROMPT-ENGINEERING.md
+RULE-QUALITY.md
+
