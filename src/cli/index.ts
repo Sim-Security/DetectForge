@@ -11,9 +11,18 @@
  *   detectforge coverage --input ./rules/ --navigator-layer
  */
 
+import 'dotenv/config';
+
 import { Command } from 'commander';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import chalk from 'chalk';
+
+import { registerGenerateCommand } from './commands/generate.js';
+import { registerExtractCommand } from './commands/extract.js';
+import { registerValidateCommand } from './commands/validate.js';
+import { registerBenchmarkCommand } from './commands/benchmark.js';
+import { registerCoverageCommand } from './commands/coverage.js';
 
 const pkg = JSON.parse(
   readFileSync(resolve(import.meta.dirname, '../../package.json'), 'utf-8')
@@ -26,78 +35,35 @@ program
   .description('AI-Powered Detection Rule Generation from Threat Intelligence Reports')
   .version(pkg.version);
 
-// Generate command — main entry point
-program
-  .command('generate')
-  .description('Generate detection rules from a threat intelligence report')
-  .requiredOption('-i, --input <path>', 'Path to threat report (PDF, HTML, Markdown, text, STIX JSON)')
-  .option('-o, --output <dir>', 'Output directory for generated rules', './rules')
-  .option('-f, --format <formats>', 'Rule formats to generate (comma-separated: sigma,yara,suricata)', 'sigma,yara,suricata')
-  .option('--sigma-only', 'Generate only Sigma rules')
-  .option('--test', 'Run tests on generated rules')
-  .option('--benchmark', 'Benchmark against SigmaHQ rules')
-  .option('--verbose', 'Verbose output')
-  .option('--model <tier>', 'AI model tier: fast, standard, quality', 'standard')
-  .action(async (options) => {
-    console.log('DetectForge: generate command');
-    console.log('  Input:', options.input);
-    console.log('  Output:', options.output);
-    console.log('  Formats:', options.sigmaOnly ? 'sigma' : options.format);
-    console.log('\n  [Not yet implemented — coming in Sprint 2-5]');
-  });
+// Register all commands
+registerGenerateCommand(program);
+registerExtractCommand(program);
+registerValidateCommand(program);
+registerBenchmarkCommand(program);
+registerCoverageCommand(program);
 
-// Extract command — IOC/TTP extraction only
-program
-  .command('extract')
-  .description('Extract IOCs and TTPs from a threat report (no rule generation)')
-  .requiredOption('-i, --input <path>', 'Path to threat report')
-  .option('-o, --output <file>', 'Output JSON file', 'extracted.json')
-  .option('--model <tier>', 'AI model tier: fast, standard, quality', 'standard')
-  .action(async (options) => {
-    console.log('DetectForge: extract command');
-    console.log('  Input:', options.input);
-    console.log('  Output:', options.output);
-    console.log('\n  [Not yet implemented — coming in Sprint 3]');
-  });
+// Global error handling
+program.exitOverride();
 
-// Validate command
-program
-  .command('validate')
-  .description('Validate existing detection rules')
-  .requiredOption('-i, --input <path>', 'Path to rules file or directory')
-  .option('-f, --format <format>', 'Rule format: sigma, yara, suricata')
-  .action(async (options) => {
-    console.log('DetectForge: validate command');
-    console.log('  Input:', options.input);
-    console.log('  Format:', options.format || 'auto-detect');
-    console.log('\n  [Not yet implemented — coming in Sprint 4-5]');
-  });
+async function main(): Promise<void> {
+  try {
+    await program.parseAsync();
+  } catch (err) {
+    // CommanderError for help/version is expected — don't treat as error
+    if (err instanceof Error && 'code' in err) {
+      const code = (err as { code: string }).code;
+      if (code === 'commander.helpDisplayed' || code === 'commander.version') {
+        return;
+      }
+    }
 
-// Benchmark command
-program
-  .command('benchmark')
-  .description('Benchmark generated rules against SigmaHQ reference corpus')
-  .requiredOption('-i, --input <path>', 'Path to generated rules')
-  .option('--sigmahq-path <dir>', 'Path to SigmaHQ rules', './data/sigmahq-rules')
-  .action(async (options) => {
-    console.log('DetectForge: benchmark command');
-    console.log('  Input:', options.input);
-    console.log('  SigmaHQ path:', options.sigmahqPath);
-    console.log('\n  [Not yet implemented — coming in Sprint 7]');
-  });
+    console.error('');
+    console.error(chalk.red(`Error: ${err instanceof Error ? err.message : String(err)}`));
+    console.error('');
+    console.error(chalk.gray('Run "detectforge --help" for usage information.'));
+    console.error('');
+    process.exit(1);
+  }
+}
 
-// Coverage command
-program
-  .command('coverage')
-  .description('Analyze ATT&CK technique coverage of detection rules')
-  .requiredOption('-i, --input <path>', 'Path to rules')
-  .option('-o, --output <file>', 'Output coverage report', 'coverage.json')
-  .option('--navigator-layer', 'Export ATT&CK Navigator layer JSON')
-  .action(async (options) => {
-    console.log('DetectForge: coverage command');
-    console.log('  Input:', options.input);
-    console.log('  Output:', options.output);
-    console.log('\n  [Not yet implemented — coming in Sprint 7]');
-  });
-
-program.parse();
+main();
