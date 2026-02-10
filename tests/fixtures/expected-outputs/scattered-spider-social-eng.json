@@ -1,0 +1,114 @@
+{
+  "report_id": "scattered-spider-social-eng",
+  "source": "CrowdStrike / Microsoft",
+  "threat_actor": "Scattered Spider / UNC3944 / Octo Tempest",
+  "campaign": "Identity-Based Attacks 2023-2024",
+  "date": "2023-2024",
+  "ground_truth": {
+    "iocs": {
+      "ipv4": [
+        "104.194.222.71",
+        "198.44.136.180",
+        "159.223.238.225",
+        "137.184.61.231"
+      ],
+      "domains": [
+        "login-microsoftonline.com",
+        "loginokta.com"
+      ],
+      "sha256": [],
+      "urls": [],
+      "emails": [],
+      "tools": [
+        "EvilProxy",
+        "Evilginx2",
+        "AnyDesk",
+        "TeamViewer",
+        "Splashtop",
+        "ALPHV/BlackCat"
+      ]
+    },
+    "ttps": [
+      {
+        "technique_id": "T1566.004",
+        "technique_name": "Phishing: Spearphishing Voice",
+        "tactic": "Initial Access",
+        "description": "Social engineering calls to IT help desks impersonating employees to request password resets",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1078.004",
+        "technique_name": "Valid Accounts: Cloud Accounts",
+        "tactic": "Initial Access",
+        "description": "Compromised cloud accounts via password resets and SIM swapping for MFA bypass",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1621",
+        "technique_name": "Multi-Factor Authentication Request Generation",
+        "tactic": "Credential Access",
+        "description": "MFA fatigue/push bombing with 50+ push notifications to force victim approval",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1556.006",
+        "technique_name": "Modify Authentication Process: Multi-Factor Authentication",
+        "tactic": "Credential Access",
+        "description": "Added attacker-controlled MFA device to compromised accounts in Okta/Azure AD",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1136.003",
+        "technique_name": "Create Account: Cloud Account",
+        "tactic": "Persistence",
+        "description": "Created new user accounts in Okta and new IAM users in AWS",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1098.001",
+        "technique_name": "Account Manipulation: Additional Cloud Credentials",
+        "tactic": "Persistence",
+        "description": "Added credentials to existing Azure AD applications and created new service principals",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1098.003",
+        "technique_name": "Account Manipulation: Additional Cloud Roles",
+        "tactic": "Persistence",
+        "description": "Assigned admin roles to compromised accounts and modified conditional access policies",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1580",
+        "technique_name": "Cloud Infrastructure Discovery",
+        "tactic": "Discovery",
+        "description": "AWS S3 bucket enumeration, EC2 instance listing, IAM user enumeration",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1530",
+        "technique_name": "Data from Cloud Storage",
+        "tactic": "Collection",
+        "description": "Data collected from SharePoint, OneDrive, and AWS S3 buckets",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1219",
+        "technique_name": "Remote Access Software",
+        "tactic": "Command and Control",
+        "description": "AnyDesk, TeamViewer, and Splashtop used for persistent remote access",
+        "detection_type": ["sigma", "suricata"]
+      },
+      {
+        "technique_id": "T1537",
+        "technique_name": "Transfer Data to Cloud Account",
+        "tactic": "Exfiltration",
+        "description": "Data exfiltrated to attacker cloud storage (Google Drive, Dropbox) and from S3 buckets",
+        "detection_type": ["sigma"]
+      }
+    ],
+    "expected_sigma_rules": 8,
+    "expected_yara_rules": 0,
+    "expected_suricata_rules": 3
+  }
+}

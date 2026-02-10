@@ -1,0 +1,104 @@
+{
+  "report_id": "ivanti-vpn-zero-day",
+  "source": "Volexity",
+  "threat_actor": "UTA0178",
+  "campaign": "Ivanti Connect Secure Zero-Day Exploitation",
+  "date": "2024-01-10",
+  "ground_truth": {
+    "iocs": {
+      "ipv4": [
+        "45.77.55.60",
+        "206.189.208.156",
+        "75.145.224.109",
+        "47.207.9.89",
+        "98.160.48.170"
+      ],
+      "domains": [
+        "symantke.com",
+        "gpaborede.com",
+        "reaborede.com"
+      ],
+      "sha256": [
+        "b7485e5838c40bd5d39d3e24c1e0a0a5f8ab1a35c14e5f46b6fcf6c35c76aa8b",
+        "c7f4e5a3d2b1c8a9f0e6d5b4c3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d7c6b5"
+      ],
+      "urls": [],
+      "emails": [],
+      "file_paths": [
+        "/home/webserver/htdocs/dana-na/auth/compcheckresult.cgi",
+        "/home/webserver/htdocs/dana-na/auth/lastauthserverused.js",
+        "/home/perl/DSLogConfig.pm",
+        "/tmp/.dslog"
+      ],
+      "cves": [
+        "CVE-2023-46805",
+        "CVE-2024-21887"
+      ],
+      "tools": [
+        "GLASSTOKEN webshell",
+        "BUSHWALK webshell"
+      ]
+    },
+    "ttps": [
+      {
+        "technique_id": "T1190",
+        "technique_name": "Exploit Public-Facing Application",
+        "tactic": "Initial Access",
+        "description": "Chained CVE-2023-46805 (auth bypass) and CVE-2024-21887 (command injection) for unauthenticated RCE on Ivanti VPN",
+        "detection_type": ["suricata", "sigma"]
+      },
+      {
+        "technique_id": "T1505.003",
+        "technique_name": "Server Software Component: Web Shell",
+        "tactic": "Persistence",
+        "description": "GLASSTOKEN and BUSHWALK webshells deployed on compromised Ivanti appliances",
+        "detection_type": ["yara", "sigma"]
+      },
+      {
+        "technique_id": "T1059.004",
+        "technique_name": "Command and Scripting Interpreter: Unix Shell",
+        "tactic": "Execution",
+        "description": "Reverse shell spawned via /bin/sh through command injection vulnerability",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1556.001",
+        "technique_name": "Modify Authentication Process: Domain Controller Authentication",
+        "tactic": "Credential Access",
+        "description": "Modified DSLogConfig.pm to intercept and log plaintext VPN authentication credentials",
+        "detection_type": ["yara"]
+      },
+      {
+        "technique_id": "T1021.001",
+        "technique_name": "Remote Services: Remote Desktop Protocol",
+        "tactic": "Lateral Movement",
+        "description": "RDP access to internal jump servers using harvested VPN credentials",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1087.002",
+        "technique_name": "Account Discovery: Domain Account",
+        "tactic": "Discovery",
+        "description": "LDAP queries against Active Directory to enumerate domain users",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1021.002",
+        "technique_name": "Remote Services: SMB/Windows Admin Shares",
+        "tactic": "Lateral Movement",
+        "description": "SMB access to internal file shares using compromised domain credentials",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1041",
+        "technique_name": "Exfiltration Over C2 Channel",
+        "tactic": "Exfiltration",
+        "description": "Database dumps and AD data exfiltrated via webshell and C2 channels",
+        "detection_type": ["suricata"]
+      }
+    ],
+    "expected_sigma_rules": 6,
+    "expected_yara_rules": 2,
+    "expected_suricata_rules": 4
+  }
+}

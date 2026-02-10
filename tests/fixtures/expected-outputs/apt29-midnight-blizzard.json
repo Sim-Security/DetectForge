@@ -1,0 +1,76 @@
+{
+  "report_id": "apt29-midnight-blizzard",
+  "source": "Microsoft Threat Intelligence",
+  "threat_actor": "Midnight Blizzard / APT29 / Cozy Bear / NOBELIUM",
+  "campaign": "Microsoft Corporate Email Compromise 2024",
+  "date": "2024-01-25",
+  "ground_truth": {
+    "iocs": {
+      "ipv4": [
+        "195.178.120.25",
+        "193.176.86.157",
+        "185.248.85.18",
+        "91.193.18.11",
+        "185.174.137.26"
+      ],
+      "domains": [],
+      "sha256": [],
+      "urls": [],
+      "emails": []
+    },
+    "ttps": [
+      {
+        "technique_id": "T1078.004",
+        "technique_name": "Valid Accounts: Cloud Accounts",
+        "tactic": "Initial Access",
+        "description": "Compromised a legacy non-production test tenant account via password spraying to gain initial access",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1110.003",
+        "technique_name": "Brute Force: Password Spraying",
+        "tactic": "Credential Access",
+        "description": "Low-volume password spray from distributed residential proxy infrastructure targeting multiple accounts",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1550.001",
+        "technique_name": "Use Alternate Authentication Material: Application Access Token",
+        "tactic": "Defense Evasion",
+        "description": "Used OAuth application tokens to authenticate to Exchange Online instead of user credentials",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1098.003",
+        "technique_name": "Account Manipulation: Additional Cloud Roles",
+        "tactic": "Persistence",
+        "description": "Created additional malicious OAuth applications with elevated permissions",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1136.003",
+        "technique_name": "Create Account: Cloud Account",
+        "tactic": "Persistence",
+        "description": "Created new user accounts to grant consent to malicious OAuth applications",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1114.002",
+        "technique_name": "Email Collection: Remote Email Collection",
+        "tactic": "Collection",
+        "description": "Accessed and exfiltrated emails from senior leadership and cybersecurity team mailboxes via OAuth",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1199",
+        "technique_name": "Trusted Relationship",
+        "tactic": "Initial Access",
+        "description": "Leveraged legacy test OAuth application's trusted relationship with the corporate environment",
+        "detection_type": ["sigma"]
+      }
+    ],
+    "expected_sigma_rules": 5,
+    "expected_yara_rules": 0,
+    "expected_suricata_rules": 2
+  }
+}

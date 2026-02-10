@@ -1,0 +1,141 @@
+{
+  "report_id": "black-basta-ransomware",
+  "source": "CISA / FBI / HHS / MS-ISAC",
+  "threat_actor": "Black Basta",
+  "campaign": "Black Basta Ransomware",
+  "date": "2024-05-10",
+  "ground_truth": {
+    "iocs": {
+      "ipv4": [
+        "23.227.203.210",
+        "185.68.93.115",
+        "194.165.16.98",
+        "45.63.1.44",
+        "149.28.134.130"
+      ],
+      "domains": [
+        "systemupdatework.com",
+        "cloudaborede.com",
+        "trackingrealtime.com"
+      ],
+      "sha256": [
+        "17205c43189c22dfcb278f5cc45c2562f622b0b6280dcd43cc1d3c274095eb90",
+        "a864282fea5a536510ae86c77ce46f7827687783628e4f2ceb5bf2c41b8cd3c6"
+      ],
+      "urls": [],
+      "emails": [],
+      "file_paths": [
+        "C:\\Windows\\Temp\\svc.exe",
+        "C:\\Users\\Public\\payload.exe",
+        "C:\\ProgramData\\update.exe"
+      ],
+      "registry_keys": [
+        "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\\SystemUpdate"
+      ],
+      "tools": [
+        "Mimikatz",
+        "PsExec",
+        "Cobalt Strike",
+        "Rclone",
+        "netscan.exe",
+        "QakBot"
+      ]
+    },
+    "ttps": [
+      {
+        "technique_id": "T1566.001",
+        "technique_name": "Phishing: Spearphishing Attachment",
+        "tactic": "Initial Access",
+        "description": "Spearphishing emails with malicious attachments as initial access vector",
+        "detection_type": ["sigma", "yara"]
+      },
+      {
+        "technique_id": "T1190",
+        "technique_name": "Exploit Public-Facing Application",
+        "tactic": "Initial Access",
+        "description": "Exploitation of ConnectWise ScreenConnect (CVE-2024-1709) and Atlassian Confluence (CVE-2023-22515)",
+        "detection_type": ["sigma", "suricata"]
+      },
+      {
+        "technique_id": "T1059.001",
+        "technique_name": "Command and Scripting Interpreter: PowerShell",
+        "tactic": "Execution",
+        "description": "Encoded PowerShell commands for execution and defense evasion",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1059.003",
+        "technique_name": "Command and Scripting Interpreter: Windows Command Shell",
+        "tactic": "Execution",
+        "description": "cmd.exe used for command execution throughout the kill chain",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1047",
+        "technique_name": "Windows Management Instrumentation",
+        "tactic": "Execution",
+        "description": "WMI used for remote process execution on target hosts",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1053.005",
+        "technique_name": "Scheduled Task/Job: Scheduled Task",
+        "tactic": "Persistence",
+        "description": "Created scheduled tasks (SystemUpdate) running as SYSTEM for persistence",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1003.001",
+        "technique_name": "OS Credential Dumping: LSASS Memory",
+        "tactic": "Credential Access",
+        "description": "Mimikatz used to dump credentials from LSASS process memory",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1021.002",
+        "technique_name": "Remote Services: SMB/Windows Admin Shares",
+        "tactic": "Lateral Movement",
+        "description": "PsExec and SMB shares used for lateral movement across the network",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1562.001",
+        "technique_name": "Impair Defenses: Disable or Modify Tools",
+        "tactic": "Defense Evasion",
+        "description": "Windows Defender disabled via Set-MpPreference -DisableRealtimeMonitoring",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1070.001",
+        "technique_name": "Indicator Removal: Clear Windows Event Logs",
+        "tactic": "Defense Evasion",
+        "description": "Event logs cleared using wevtutil cl to cover tracks",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1490",
+        "technique_name": "Inhibit System Recovery",
+        "tactic": "Impact",
+        "description": "Shadow copies deleted via vssadmin.exe delete shadows /all /quiet",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1486",
+        "technique_name": "Data Encrypted for Impact",
+        "tactic": "Impact",
+        "description": "ChaCha20 encryption of files with .basta extension, RSA-4096 key wrapping",
+        "detection_type": ["sigma", "yara"]
+      },
+      {
+        "technique_id": "T1567.002",
+        "technique_name": "Exfiltration Over Web Service: Exfiltration to Cloud Storage",
+        "tactic": "Exfiltration",
+        "description": "Rclone used to exfiltrate data to cloud storage (MEGA)",
+        "detection_type": ["sigma", "suricata"]
+      }
+    ],
+    "expected_sigma_rules": 10,
+    "expected_yara_rules": 2,
+    "expected_suricata_rules": 4
+  }
+}

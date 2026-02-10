@@ -1,0 +1,161 @@
+{
+  "report_id": "icedid-to-ransomware",
+  "source": "The DFIR Report",
+  "threat_actor": "IcedID Operators / Dagon Locker Affiliate",
+  "campaign": "IcedID to Dagon Locker Ransomware",
+  "date": "2024-04-01",
+  "ground_truth": {
+    "iocs": {
+      "ipv4": [
+        "94.232.41.105",
+        "185.70.184.8",
+        "179.43.175.207",
+        "193.42.33.14"
+      ],
+      "domains": [
+        "officeloaded.com",
+        "trackercdn.com",
+        "checkstatistic.com",
+        "cloudfileteam.com"
+      ],
+      "sha256": [
+        "3b2e708eaa4744c76a633391cf2c983f4a098b46436525619e5ea44e105c7b12",
+        "e8b6d3e1a4f5c7d2b9a0e3f6c8d1a4b7e0f3c6d9a2b5e8f1c4d7a0b3e6f9c2",
+        "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+      ],
+      "urls": [
+        "http://officeloaded.com/load.dll"
+      ],
+      "emails": [],
+      "file_paths": [
+        "C:\\Users\\Public\\update.dll",
+        "C:\\ProgramData\\creds.txt",
+        "C:\\ProgramData\\hashes.txt",
+        "C:\\ProgramData\\beacon.exe"
+      ],
+      "registry_keys": [
+        "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\\ChromeUpdater"
+      ],
+      "tools": [
+        "IcedID",
+        "Mimikatz",
+        "Rubeus",
+        "Cobalt Strike",
+        "PsExec",
+        "Rclone",
+        "ScreenConnect",
+        "Dagon Locker"
+      ]
+    },
+    "ttps": [
+      {
+        "technique_id": "T1566.001",
+        "technique_name": "Phishing: Spearphishing Attachment",
+        "tactic": "Initial Access",
+        "description": "OneNote attachment containing embedded HTA file delivered via phishing email",
+        "detection_type": ["sigma", "yara"]
+      },
+      {
+        "technique_id": "T1218.005",
+        "technique_name": "System Binary Proxy Execution: Mshta",
+        "tactic": "Defense Evasion",
+        "description": "mshta.exe used to execute embedded HTA file from OneNote attachment",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1059.003",
+        "technique_name": "Command and Scripting Interpreter: Windows Command Shell",
+        "tactic": "Execution",
+        "description": "cmd.exe used to download and execute IcedID loader via curl and rundll32",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1218.011",
+        "technique_name": "System Binary Proxy Execution: Rundll32",
+        "tactic": "Defense Evasion",
+        "description": "rundll32.exe used to load IcedID DLL via DllRegisterServer export",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1053.005",
+        "technique_name": "Scheduled Task/Job: Scheduled Task",
+        "tactic": "Persistence",
+        "description": "Scheduled task ChromeUpdater created for IcedID persistence on logon",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1071.001",
+        "technique_name": "Application Layer Protocol: Web Protocols",
+        "tactic": "Command and Control",
+        "description": "HTTPS C2 communication to IcedID and Cobalt Strike servers",
+        "detection_type": ["suricata"]
+      },
+      {
+        "technique_id": "T1087.002",
+        "technique_name": "Account Discovery: Domain Account",
+        "tactic": "Discovery",
+        "description": "Domain Admin enumeration via net group and nltest commands",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1003.001",
+        "technique_name": "OS Credential Dumping: LSASS Memory",
+        "tactic": "Credential Access",
+        "description": "Mimikatz sekurlsa::logonpasswords used to dump LSASS credentials",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1558.003",
+        "technique_name": "Steal or Forge Kerberos Tickets: Kerberoasting",
+        "tactic": "Credential Access",
+        "description": "Rubeus kerberoast used to extract service ticket hashes for offline cracking",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1021.002",
+        "technique_name": "Remote Services: SMB/Windows Admin Shares",
+        "tactic": "Lateral Movement",
+        "description": "PsExec used to deploy Cobalt Strike beacons to domain controller",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1021.001",
+        "technique_name": "Remote Services: Remote Desktop Protocol",
+        "tactic": "Lateral Movement",
+        "description": "RDP used with compromised Domain Admin credentials for lateral movement",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1219",
+        "technique_name": "Remote Access Software",
+        "tactic": "Command and Control",
+        "description": "ScreenConnect (ConnectWise) installed for persistent remote access",
+        "detection_type": ["sigma", "suricata"]
+      },
+      {
+        "technique_id": "T1567.002",
+        "technique_name": "Exfiltration Over Web Service: Exfiltration to Cloud Storage",
+        "tactic": "Exfiltration",
+        "description": "Rclone used to exfiltrate Finance share data to MEGA cloud storage",
+        "detection_type": ["sigma", "suricata"]
+      },
+      {
+        "technique_id": "T1490",
+        "technique_name": "Inhibit System Recovery",
+        "tactic": "Impact",
+        "description": "Shadow copies deleted and recovery disabled before ransomware deployment",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1486",
+        "technique_name": "Data Encrypted for Impact",
+        "tactic": "Impact",
+        "description": "Dagon Locker ransomware deployed via Group Policy across the domain",
+        "detection_type": ["sigma", "yara"]
+      }
+    ],
+    "expected_sigma_rules": 12,
+    "expected_yara_rules": 3,
+    "expected_suricata_rules": 5
+  }
+}

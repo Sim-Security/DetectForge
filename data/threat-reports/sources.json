@@ -1,0 +1,202 @@
+[
+  {
+    "id": "cisa-advisories",
+    "name": "CISA Cybersecurity Advisories",
+    "url": "https://www.cisa.gov/news-events/cybersecurity-advisories",
+    "type": "advisory",
+    "format": "html",
+    "quality": "high",
+    "frequency": "weekly",
+    "notes": "Structured, consistent format. Excellent for ground truth. Co-authored with FBI, NSA, etc."
+  },
+  {
+    "id": "mandiant-blog",
+    "name": "Mandiant / Google Threat Intelligence Blog",
+    "url": "https://www.mandiant.com/resources/blog",
+    "type": "blog",
+    "format": "html",
+    "quality": "high",
+    "frequency": "weekly",
+    "notes": "Detailed APT reports with IOCs and TTPs. Often includes MITRE ATT&CK mapping."
+  },
+  {
+    "id": "crowdstrike-blog",
+    "name": "CrowdStrike Blog - Threat Intelligence",
+    "url": "https://www.crowdstrike.com/blog/category/threat-intel-research/",
+    "type": "blog",
+    "format": "html",
+    "quality": "high",
+    "frequency": "weekly",
+    "notes": "Named threat actor reports (FANCY BEAR, COZY BEAR, etc.). Good ATT&CK coverage."
+  },
+  {
+    "id": "unit42",
+    "name": "Unit 42 / Palo Alto Networks Research",
+    "url": "https://unit42.paloaltonetworks.com/",
+    "type": "blog",
+    "format": "html",
+    "quality": "high",
+    "frequency": "weekly",
+    "notes": "Technical deep-dives on campaigns and malware. Usually includes IOCs."
+  },
+  {
+    "id": "microsoft-security-blog",
+    "name": "Microsoft Threat Intelligence Blog",
+    "url": "https://www.microsoft.com/en-us/security/blog/topic/threat-intelligence/",
+    "type": "blog",
+    "format": "html",
+    "quality": "high",
+    "frequency": "weekly",
+    "notes": "Uses Blizzard/Tempest naming. Rich MITRE ATT&CK mapping."
+  },
+  {
+    "id": "dfir-report",
+    "name": "The DFIR Report",
+    "url": "https://thedfirreport.com/",
+    "type": "blog",
+    "format": "html",
+    "quality": "high",
+    "frequency": "monthly",
+    "notes": "Extremely detailed intrusion writeups with timelines, IOCs, TTPs, and command lines. Best for ground truth."
+  },
+  {
+    "id": "elastic-security-labs",
+    "name": "Elastic Security Labs",
+    "url": "https://www.elastic.co/security-labs",
+    "type": "blog",
+    "format": "html",
+    "quality": "high",
+    "frequency": "weekly",
+    "notes": "Malware analysis and detection rule content. Often includes Elastic detection rules."
+  },
+  {
+    "id": "sentinelone-labs",
+    "name": "SentinelOne Labs",
+    "url": "https://www.sentinelone.com/labs/",
+    "type": "blog",
+    "format": "html",
+    "quality": "high",
+    "frequency": "weekly",
+    "notes": "Deep technical analysis of malware and threat actors."
+  },
+  {
+    "id": "sophos-news",
+    "name": "Sophos News - Security Research",
+    "url": "https://news.sophos.com/en-us/category/threat-research/",
+    "type": "blog",
+    "format": "html",
+    "quality": "medium",
+    "frequency": "weekly",
+    "notes": "Ransomware and malware analysis. Good IOC coverage."
+  },
+  {
+    "id": "trendmicro-research",
+    "name": "Trend Micro Research",
+    "url": "https://www.trendmicro.com/en_us/research.html",
+    "type": "blog",
+    "format": "html",
+    "quality": "medium",
+    "frequency": "weekly",
+    "notes": "APT campaign tracking (Earth * naming). Good for Asian threat groups."
+  },
+  {
+    "id": "volexity-blog",
+    "name": "Volexity Blog",
+    "url": "https://www.volexity.com/blog/",
+    "type": "blog",
+    "format": "html",
+    "quality": "high",
+    "frequency": "monthly",
+    "notes": "Excellent zero-day exploitation writeups. Detailed IOCs and forensic artifacts."
+  },
+  {
+    "id": "recorded-future",
+    "name": "Recorded Future - Insikt Group",
+    "url": "https://www.recordedfuture.com/research",
+    "type": "blog",
+    "format": "html",
+    "quality": "high",
+    "frequency": "weekly",
+    "notes": "Nation-state tracking and infrastructure analysis."
+  },
+  {
+    "id": "proofpoint-blog",
+    "name": "Proofpoint Threat Research",
+    "url": "https://www.proofpoint.com/us/blog",
+    "type": "blog",
+    "format": "html",
+    "quality": "high",
+    "frequency": "weekly",
+    "notes": "Email-based threat campaigns (TA### naming). Good for phishing IOCs."
+  },
+  {
+    "id": "cisco-talos",
+    "name": "Cisco Talos Intelligence",
+    "url": "https://blog.talosintelligence.com/",
+    "type": "blog",
+    "format": "html",
+    "quality": "high",
+    "frequency": "weekly",
+    "notes": "Vulnerability research and malware analysis. Good network-level IOCs."
+  },
+  {
+    "id": "secureworks-ctu",
+    "name": "Secureworks Counter Threat Unit",
+    "url": "https://www.secureworks.com/research",
+    "type": "blog",
+    "format": "html",
+    "quality": "high",
+    "frequency": "monthly",
+    "notes": "Detailed threat group profiles (IRON/GOLD/BRONZE naming)."
+  },
+  {
+    "id": "checkpoint-research",
+    "name": "Check Point Research",
+    "url": "https://research.checkpoint.com/",
+    "type": "blog",
+    "format": "html",
+    "quality": "medium",
+    "frequency": "weekly",
+    "notes": "Malware analysis and campaign tracking."
+  },
+  {
+    "id": "nsa-advisories",
+    "name": "NSA Cybersecurity Advisories",
+    "url": "https://www.nsa.gov/Press-Room/Cybersecurity-Advisories-Guidance/",
+    "type": "advisory",
+    "format": "pdf",
+    "quality": "high",
+    "frequency": "monthly",
+    "notes": "Joint advisories with CISA. Excellent IOC lists and detection guidance."
+  },
+  {
+    "id": "malware-traffic-analysis",
+    "name": "Malware Traffic Analysis",
+    "url": "https://www.malware-traffic-analysis.net/",
+    "type": "pcap",
+    "format": "html",
+    "quality": "high",
+    "frequency": "daily",
+    "notes": "PCAP files with malicious traffic. Essential for Suricata rule testing."
+  },
+  {
+    "id": "any-run-trends",
+    "name": "ANY.RUN Malware Trends",
+    "url": "https://any.run/malware-trends/",
+    "type": "sandbox",
+    "format": "html",
+    "quality": "medium",
+    "frequency": "daily",
+    "notes": "Current malware sample analysis with behavioral indicators."
+  },
+  {
+    "id": "malpedia",
+    "name": "Malpedia - Fraunhofer FKIE",
+    "url": "https://malpedia.caad.fkie.fraunhofer.de/",
+    "type": "encyclopedia",
+    "format": "html",
+    "quality": "high",
+    "frequency": "ongoing",
+    "notes": "Curated malware family database with YARA rules. Reference for malware naming."
+  }
+]

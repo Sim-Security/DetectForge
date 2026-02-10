@@ -1,0 +1,105 @@
+{
+  "report_id": "lazarus-kandykorn",
+  "source": "Elastic Security Labs",
+  "threat_actor": "Lazarus Group / DPRK",
+  "campaign": "KANDYKORN",
+  "date": "2023-10-31",
+  "ground_truth": {
+    "iocs": {
+      "ipv4": [
+        "23.254.226.90",
+        "192.119.64.43"
+      ],
+      "domains": [
+        "tp-globa.xyz",
+        "on-global.xyz"
+      ],
+      "sha256": [
+        "3ea2ead8f3cec030906dcbffe3efd5c5d77d5d375d4a54cca320c3f2b48b6e80",
+        "927b3564c1cf884d2a05e1d7bd24362ce8563f58304a211fa72155cb0bfc8fef",
+        "2360a69e5fd7217e977123c81d3dbb60bf4763a9dae6949bc1900234f7762df1"
+      ],
+      "urls": [
+        "http://tp-globa.xyz/OdhLca2"
+      ],
+      "emails": [],
+      "file_paths": [
+        "/tmp/.sysupdate",
+        "/usr/local/bin/.kandykorn",
+        "/Library/LaunchDaemons/com.apple.sysmond.plist"
+      ],
+      "tools": [
+        "SUGARLOADER",
+        "KANDYKORN RAT"
+      ]
+    },
+    "ttps": [
+      {
+        "technique_id": "T1566.003",
+        "technique_name": "Phishing: Spearphishing via Service",
+        "tactic": "Initial Access",
+        "description": "Social engineering via Discord targeting blockchain engineers with fake crypto arbitrage bot",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1204.002",
+        "technique_name": "User Execution: Malicious File",
+        "tactic": "Execution",
+        "description": "Victim manually runs malicious Python application (main.py) from cloned GitHub repo",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1059.006",
+        "technique_name": "Command and Scripting Interpreter: Python",
+        "tactic": "Execution",
+        "description": "Python-based loader chain (testSpeed.py) downloads and executes next stage",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1105",
+        "technique_name": "Ingress Tool Transfer",
+        "tactic": "Command and Control",
+        "description": "urllib.request.urlretrieve used to download SUGARLOADER from C2",
+        "detection_type": ["sigma", "suricata"]
+      },
+      {
+        "technique_id": "T1547.011",
+        "technique_name": "Boot or Logon Autostart Execution: Plist Modification",
+        "tactic": "Persistence",
+        "description": "LaunchDaemon plist created at com.apple.sysmond.plist for persistence",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1573.001",
+        "technique_name": "Encrypted Channel: Symmetric Cryptography",
+        "tactic": "Command and Control",
+        "description": "RC4 encryption used for C2 communications over TCP 443",
+        "detection_type": ["suricata"]
+      },
+      {
+        "technique_id": "T1041",
+        "technique_name": "Exfiltration Over C2 Channel",
+        "tactic": "Exfiltration",
+        "description": "Data exfiltrated via KANDYKORN's file upload capability over C2 channel",
+        "detection_type": ["suricata"]
+      },
+      {
+        "technique_id": "T1113",
+        "technique_name": "Screen Capture",
+        "tactic": "Collection",
+        "description": "KANDYKORN RAT includes screen capture functionality",
+        "detection_type": ["sigma"]
+      },
+      {
+        "technique_id": "T1056.001",
+        "technique_name": "Input Capture: Keylogging",
+        "tactic": "Collection",
+        "description": "KANDYKORN RAT includes keylogging capability",
+        "detection_type": ["sigma"]
+      }
+    ],
+    "expected_sigma_rules": 6,
+    "expected_yara_rules": 3,
+    "expected_suricata_rules": 3
+  }
+}
