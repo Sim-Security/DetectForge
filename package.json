@@ -1,0 +1,68 @@
+{
+  "name": "detectforge",
+  "version": "0.1.0",
+  "description": "AI-Powered Detection Rule Generation from Threat Intelligence Reports",
+  "type": "module",
+  "bin": {
+    "detectforge": "./dist/cli/index.js"
+  },
+  "scripts": {
+    "dev": "bun run src/cli/index.ts",
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:benchmark": "vitest run tests/benchmark",
+    "lint": "tsc --noEmit",
+    "format": "prettier --write 'src/**/*.ts' 'tests/**/*.ts'",
+    "data:attack": "bun run scripts/download-attack-data.ts",
+    "data:sigmahq": "bun run scripts/download-sigmahq-samples.ts",
+    "data:reports": "bun run scripts/collect-threat-reports.ts",
+    "data:all": "bun run data:attack && bun run data:sigmahq && bun run data:reports",
+    "benchmark": "bun run scripts/run-benchmarks.ts",
+    "generate:logs": "bun run scripts/generate-test-logs.ts"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "yaml": "^2.4.0",
+    "chalk": "^5.3.0",
+    "ora": "^8.0.1",
+    "uuid": "^9.0.1",
+    "cheerio": "^1.0.0",
+    "pdf-parse": "^1.1.1",
+    "dotenv": "^16.4.5",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.9",
+    "@types/node": "^20.14.0",
+    "@types/pdf-parse": "^1.1.4",
+    "@types/uuid": "^9.0.8",
+    "@vitest/coverage-v8": "^2.0.0",
+    "prettier": "^3.3.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "author": "Adam (ranomis)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sim-Security/DetectForge.git"
+  },
+  "keywords": [
+    "detection-engineering",
+    "sigma-rules",
+    "yara-rules",
+    "suricata-rules",
+    "threat-intelligence",
+    "mitre-attack",
+    "security-automation",
+    "soc",
+    "detection-as-code"
+  ]
+}

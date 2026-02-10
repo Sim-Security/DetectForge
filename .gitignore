@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+.bun/
+
+# Build output
+dist/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Data files (downloaded, not committed)
+data/mitre-attack/*.json
+data/sigmahq-rules/**/*.yml
+data/threat-reports/reports/
+data/log-samples/
+
+# Test artifacts
+coverage/
+.vitest/
+tests/fixtures/reports/*.pdf
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary
+tmp/
+.tmp/
+
+# PCAP files (too large for git)
+**/*.pcap
+**/*.evtx
+
+# Malware samples (never commit)
+src/testing/test-data/malware-samples/**
+!src/testing/test-data/malware-samples/.gitkeep
