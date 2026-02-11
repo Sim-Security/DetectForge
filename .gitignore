@@ -47,13 +47,11 @@ tmp/
 src/testing/test-data/malware-samples/**
 !src/testing/test-data/malware-samples/.gitkeep
 
-# Docs
-MASTER_PROMPT.md
-PRD.md
-BACKLOG.md
-ARCHITECTURE.md
-THREAT-MODEL.md
-BENCHMARKS.md
-PROMPT-ENGINEERING.md
-RULE-QUALITY.md
+# Docs (root-level drafts, not committed)
+/MASTER_PROMPT.md
+/PRD.md
+/BACKLOG.md
+/THREAT-MODEL.md
+/BENCHMARKS.md
+/RULE-QUALITY.md
 
