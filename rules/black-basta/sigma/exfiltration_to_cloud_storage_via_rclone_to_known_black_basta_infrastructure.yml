@@ -1,0 +1,35 @@
+title: Exfiltration to Cloud Storage via RClone to Known Black Basta Infrastructure
+id: 757b39d9-1b73-40eb-8b53-54f555a0b5d0
+status: experimental
+description: Detects outbound network connections to known IP addresses and domains associated with Black Basta exfiltration activity using RClone. Threat actors use RClone to sync or copy sensitive data to attacker-controlled cloud storage providers or servers prior to ransomware deployment.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.exfiltration
+  - attack.t1567.002
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_iocs:
+    DestinationIp:
+      - 170.130.165.73
+      - 45.11.181.44
+      - 66.42.118.54
+      - 79.132.130.211
+    DestinationHostname:
+      - "*moereng.com"
+      - "*exckicks.com"
+  selection_rclone_process:
+    Image:
+      - "*\\rclone.exe"
+  selection_initiated:
+    Initiated:
+      - true
+  condition: (selection_iocs or selection_rclone_process) and selection_initiated
+falsepositives:
+  - Legitimate use of RClone by system administrators for cloud backups
+  - Automated server synchronization tasks to authorized cloud storage endpoints
+  - Development environments using RClone for container image or asset management
+level: critical

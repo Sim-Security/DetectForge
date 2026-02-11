@@ -1,0 +1,37 @@
+title: Remote Access Tool Network Connection via AnyDesk or Quick Assist
+id: 4fbdbaf7-a855-43f2-ac43-9defb36aa627
+status: experimental
+description: Detects network connections initiated by AnyDesk or Windows Quick Assist to known malicious IP addresses or general remote desktop infrastructure. This behavior is consistent with Black Basta affiliates using vishing and social engineering to trick users into installing remote access tools for initial access.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.initial_access
+  - attack.t1566.004
+  - attack.t1219
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_tools:
+    Image:
+      - "*\\anydesk.exe"
+      - "*\\quickassist.exe"
+  selection_iocs:
+    DestinationIp:
+      - 170.130.165.73
+      - 45.11.181.44
+      - 66.42.118.54
+      - 79.132.130.211
+  selection_destinations:
+    DestinationHostname:
+      - "*moereng.com"
+      - "*exckicks.com"
+  filter_initiated:
+    Initiated: false
+  condition: (selection_tools or selection_iocs or selection_destinations) and not filter_initiated
+falsepositives:
+  - Legitimate use of AnyDesk or Quick Assist by internal IT support teams
+  - Authorized third-party vendors performing remote maintenance
+  - Users seeking legitimate remote assistance for technical issues
+level: high

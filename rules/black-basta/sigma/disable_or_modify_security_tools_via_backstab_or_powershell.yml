@@ -1,0 +1,45 @@
+title: Disable or Modify Security Tools via Backstab or PowerShell
+id: 1360eaf1-742a-4beb-8686-3928cf166569
+status: experimental
+description: Detects the use of the Backstab tool or PowerShell commands to terminate, disable, or impair EDR and antivirus services. Threat actors use these methods to bypass host-based security defenses and execute payloads without interference.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.defense_evasion
+  - attack.t1562.001
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_backstab_process:
+    EventID: 4688
+    ProcessName:
+      - "*\\backstab.exe"
+      - "*\\bstab.exe"
+  selection_service_tamper:
+    EventID: 4697
+    ServiceName:
+      - "*Sentinel*"
+      - "*CrowdStrike*"
+      - "*CarbonBlack*"
+      - "*Cylance*"
+      - "*WinDefend*"
+      - "*MpsSvc*"
+  selection_network_iocs:
+    IpAddress:
+      - 170.130.165.73
+      - 45.11.181.44
+      - 66.42.118.54
+      - 79.132.130.211
+  filter_system_accounts:
+    SubjectUserName:
+      - SYSTEM
+      - NETWORK SERVICE
+      - LOCAL SERVICE
+  condition: (selection_backstab_process or selection_service_tamper or selection_network_iocs) and not filter_system_accounts
+falsepositives:
+  - Authorized security software updates or uninstallation by administrators
+  - Legitimate troubleshooting of security agents by IT staff
+  - Automated deployment scripts for security software that may stop services during upgrade
+level: high

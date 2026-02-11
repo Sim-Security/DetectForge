@@ -1,0 +1,79 @@
+{
+  "generatedAt": "2026-02-11T03:32:16.436Z",
+  "inputFile": "cisa-black-basta-aa24-131a.md",
+  "reportTitle": "StopRansomware: Black Basta (CISA AA24-131A)",
+  "formats": [
+    "sigma"
+  ],
+  "modelTier": "fast",
+  "summary": {
+    "sigmaRules": 6,
+    "yaraRules": 0,
+    "suricataRules": 0,
+    "totalRules": 6,
+    "validationPassed": 6,
+    "validationFailed": 0,
+    "totalCostUsd": 0.0279,
+    "totalTokens": 18218,
+    "durationMs": 56701
+  },
+  "iocCount": 12,
+  "ttpCount": 6,
+  "attackMappingCount": 6,
+  "rules": [
+    {
+      "format": "sigma",
+      "id": "4fbdbaf7-a855-43f2-ac43-9defb36aa627",
+      "title": "Remote Access Tool Network Connection via AnyDesk or Quick Assist",
+      "attackTechniqueId": "T1566.004",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "c5473fab-d9a8-4b0a-b1e1-8d98d140c93b",
+      "title": "LSASS Memory Credential Dumping via Mimikatz",
+      "attackTechniqueId": "T1003.001",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "b4c49818-216d-41d2-b1bb-f53009a6a619",
+      "title": "Masquerading SoftPerfect Network Scanner as System Utility",
+      "attackTechniqueId": "T1036.003",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "1360eaf1-742a-4beb-8686-3928cf166569",
+      "title": "Disable or Modify Security Tools via Backstab or PowerShell",
+      "attackTechniqueId": "T1562.001",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "757b39d9-1b73-40eb-8b53-54f555a0b5d0",
+      "title": "Exfiltration to Cloud Storage via RClone to Known Black Basta Infrastructure",
+      "attackTechniqueId": "T1567.002",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "ae87cd79-67c0-43be-97a0-15b278127511",
+      "title": "Inhibit System Recovery via Vssadmin Shadow Copy Deletion",
+      "attackTechniqueId": "T1490",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    }
+  ]
+}
