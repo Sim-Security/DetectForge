@@ -1,0 +1,39 @@
+title: Inhibit System Recovery via Vssadmin Shadow Copy Deletion
+id: 7981b0cf-c55f-4258-88e4-0059ed15ecce
+status: experimental
+description: Detects the deletion of volume shadow copies using vssadmin.exe. This is a common technique used by ransomware actors, such as Black Basta, to prevent victims from recovering encrypted files using system restore points.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.impact
+  - attack.t1490
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_vssadmin:
+    Image:
+      - "*\\vssadmin.exe"
+    CommandLine:
+      - "*delete*"
+      - "*shadows*"
+  selection_specific_flags:
+    CommandLine:
+      - "*/all*"
+      - "*/quiet*"
+  selection_wmic:
+    CommandLine:
+      - "*wmic*shadowcopy*delete*"
+  filter_legitimate_admin:
+    User:
+      - NT AUTHORITY\SYSTEM
+    ParentImage:
+      - "*\\services.exe"
+      - "*\\msiexec.exe"
+  condition: (selection_vssadmin and selection_specific_flags) or selection_wmic and not filter_legitimate_admin
+falsepositives:
+  - Legitimate backup software performing maintenance tasks
+  - System administrators manually managing shadow copy storage limits
+  - Automated patch management scripts that reset system restore points
+level: high

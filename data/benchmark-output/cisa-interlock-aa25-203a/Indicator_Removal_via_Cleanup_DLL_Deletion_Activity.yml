@@ -1,0 +1,33 @@
+title: Indicator Removal via Cleanup DLL Deletion Activity
+id: 2ace46cd-ac4e-4a9b-8ce8-e86dfd4cdd2d
+status: experimental
+description: Detects the deletion of files by rundll32.exe or the deletion of masqueraded binaries (like conhost.exe) from suspicious locations. This behavior is associated with cleanup operations where a DLL with a non-standard extension (e.g., .wasd) is used to remove encryption binaries and forensic artifacts to evade detection.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.defense_evasion
+  - attack.t1070.004
+  - attack.t1036
+logsource:
+  product: windows
+  category: file_event
+detection:
+  selection_cleanup_process:
+    Image:
+      - "*\\rundll32.exe"
+  selection_suspicious_files:
+    TargetFilename:
+      - "*.wasd"
+      - "*\\AppData\\Local\\Temp\\conhost.exe"
+      - "*\\AppData\\Roaming\\conhost.exe"
+      - "*\\tmp41.wasd"
+  filter_legitimate_conhost:
+    TargetFilename:
+      - C:\Windows\System32\conhost.exe
+      - C:\Windows\SysWOW64\conhost.exe
+  condition: (selection_cleanup_process and selection_suspicious_files) or (selection_suspicious_files and not filter_legitimate_conhost)
+falsepositives:
+  - Software installers that use temporary DLLs with custom extensions for cleanup
+  - Legitimate administrative scripts performing file maintenance in temp directories
+level: high

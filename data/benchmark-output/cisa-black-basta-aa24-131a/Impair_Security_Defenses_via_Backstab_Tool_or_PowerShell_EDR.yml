@@ -1,0 +1,48 @@
+title: Impair Security Defenses via Backstab Tool or PowerShell EDR Disablement
+id: a44e34a1-7b4b-4986-95bc-9a09acba22d9
+status: experimental
+description: Detects the use of the Backstab tool or specific PowerShell commands used to disable endpoint security software and EDR solutions. Threat actors use these methods to evade detection by terminating security processes or disabling real-time monitoring features.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.defense_evasion
+  - attack.t1562.001
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_backstab_process:
+    EventID:
+      - 4688
+    ProcessName:
+      - "*\\backstab.exe"
+      - "*\\backstab64.exe"
+  selection_network_iocs:
+    EventID:
+      - 4624
+      - 5140
+      - 5145
+    IpAddress:
+      - 170.130.165.73
+      - 45.11.181.44
+      - 66.42.118.54
+      - 79.132.130.211
+  selection_powershell_disable:
+    EventID:
+      - 4688
+    ProcessName:
+      - "*\\powershell.exe"
+      - "*\\pwsh.exe"
+    ProcessId:
+      - "*"
+  filter_admin_activity:
+    SubjectUserName:
+      - SYSTEM
+      - NETWORK SERVICE
+  condition: (selection_backstab_process or selection_network_iocs) or (selection_powershell_disable and not filter_admin_activity)
+falsepositives:
+  - Authorized security auditing or penetration testing activities
+  - Administrative scripts used for troubleshooting security agent issues
+  - Legitimate software updates that temporarily stop security services
+level: high

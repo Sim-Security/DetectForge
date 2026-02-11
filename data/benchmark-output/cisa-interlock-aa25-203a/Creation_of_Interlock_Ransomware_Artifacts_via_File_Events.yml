@@ -1,0 +1,26 @@
+title: Creation of Interlock Ransomware Artifacts via File Events
+id: 212ec1b1-fa51-4586-9902-44f2a05d82b0
+status: experimental
+description: Detects the creation of ransom notes and files with specific extensions associated with Interlock ransomware. Interlock uses a combined AES-RSA algorithm to encrypt files and appends extensions such as .interlock or .1nt3rlock, while dropping a ransom note named !__README__!.txt for extortion purposes.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.impact
+  - attack.t1486
+logsource:
+  product: windows
+  category: file_event
+detection:
+  selection_ransom_note:
+    TargetFilename:
+      - "*\\!__README__!.txt"
+  selection_extensions:
+    TargetFilename:
+      - "*.interlock"
+      - "*.1nt3rlock"
+  condition: selection_ransom_note or selection_extensions
+falsepositives:
+  - Testing or simulation of ransomware behavior in a controlled environment
+  - Files with similar extensions used by rare or proprietary legitimate software (unlikely for these specific strings)
+level: critical

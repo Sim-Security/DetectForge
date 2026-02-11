@@ -1,0 +1,39 @@
+title: Execution of Interlock Ransomware Masquerading as Conhost
+id: d92c6aab-4728-4789-8280-f3b258c9fcaa
+status: experimental
+description: Detects the Interlock ransomware payload masquerading as the legitimate conhost.exe process from non-standard locations, or the use of rundll32.exe to execute cleanup DLLs with suspicious extensions like .wasd. This behavior is used to blend in with system processes and remove forensic artifacts after encryption.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.defense_evasion
+  - attack.t1036.005
+  - attack.impact
+  - attack.t1486
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_masquerade:
+    Image:
+      - "*\\conhost.exe"
+  filter_legitimate_conhost:
+    Image:
+      - C:\Windows\System32\conhost.exe
+  selection_cleanup_dll:
+    Image:
+      - "*\\rundll32.exe"
+    CommandLine:
+      - "*.wasd*"
+  selection_hashes:
+    Hashes:
+      - "*SHA256=e86bb8361c436be94b0901e5b39db9b6666134f23cce1e5581421c2981405cb1*"
+      - "*SHA256=c733d85f445004c9d6918f7c09a1e0d38a8f3b37ad825cd544b865dba36a1ba6*"
+      - "*SHA256=c20baba26ebb596de14b403b9f78ddc3c13ce9870eea332476ac2c1dd582aa07*"
+      - "*SHA256=a4f0b68052e8da9a80b70407a92400c6a5def19717e0240ac608612476e1137e*"
+      - "*SHA256=1845a910dcde8c6e45ad2e0c48439e5ab8bbbeb731f2af11a1b7bbab3bfe0127*"
+  condition: (selection_masquerade and not filter_legitimate_conhost) or selection_cleanup_dll or selection_hashes
+falsepositives:
+  - Legitimate third-party console emulators or wrappers that bundle conhost.exe in non-standard paths
+  - Administrative tools using rundll32 to call functions in files with unusual extensions for obfuscation (rare)
+level: critical

@@ -1,0 +1,34 @@
+title: Lateral Movement via RDP from Suspicious C2 IP Addresses
+id: 8b8de914-0e89-4c43-80a3-aa03495d8e9d
+status: experimental
+description: Detects Remote Desktop Protocol (RDP) logon events (Event ID 4624) originating from known Cobalt Strike C2 infrastructure or suspicious external IP addresses. This activity is consistent with lateral movement and remote access patterns observed in campaigns using tools like PsExec and Cobalt Strike.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.lateral_movement
+  - attack.t1021.001
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_rdp:
+    EventID:
+      - 4624
+    LogonType:
+      - 10
+  selection_ips:
+    IpAddress:
+      - 170.130.165.73
+      - 45.11.181.44
+      - 66.42.118.54
+      - 79.132.130.211
+  filter_local:
+    IpAddress:
+      - 127.0.0.1
+      - ::1
+  condition: selection_rdp and selection_ips and not filter_local
+falsepositives:
+  - Authorized administrative access from a static IP that was previously associated with malicious activity
+  - Misconfigured security scanning appliances using these specific IP ranges
+level: critical

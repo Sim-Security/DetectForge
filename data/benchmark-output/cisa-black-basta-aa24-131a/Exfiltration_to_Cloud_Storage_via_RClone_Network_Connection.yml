@@ -1,0 +1,58 @@
+title: Exfiltration to Cloud Storage via RClone Network Connection
+id: 44cbd3f5-8b1a-4273-85d2-90369e5e7936
+status: experimental
+description: Detects network connections initiated by RClone or to known malicious infrastructure associated with RClone exfiltration. Threat actors use RClone to exfiltrate sensitive data to cloud storage providers like Mega, Dropbox, or attacker-controlled servers before deploying ransomware.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.exfiltration
+  - attack.t1567.002
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_rclone_process:
+    Image:
+      - "*\\rclone.exe"
+  selection_known_ips:
+    DestinationIp:
+      - 170.130.165.73
+      - 45.11.181.44
+      - 66.42.118.54
+      - 79.132.130.211
+  selection_known_domains:
+    DestinationHostname:
+      - "*moereng.com"
+      - "*exckicks.com"
+      - "*mega.nz"
+      - "*mega.co.nz"
+      - "*dropboxapi.com"
+      - "*pcloud.com"
+  filter_local:
+    DestinationIp:
+      - 10.*
+      - 192.168.*
+      - 172.16.*
+      - 172.17.*
+      - 172.18.*
+      - 172.19.*
+      - 172.20.*
+      - 172.21.*
+      - 172.22.*
+      - 172.23.*
+      - 172.24.*
+      - 172.25.*
+      - 172.26.*
+      - 172.27.*
+      - 172.28.*
+      - 172.29.*
+      - 172.30.*
+      - 172.31.*
+      - 127.0.0.1
+  condition: (selection_rclone_process or selection_known_ips or selection_known_domains) and not filter_local
+falsepositives:
+  - Legitimate use of RClone by system administrators for backups to cloud providers
+  - Authorized data migration tasks to cloud storage
+  - Automated server backups to offsite storage
+level: high

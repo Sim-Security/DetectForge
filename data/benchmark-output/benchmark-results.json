@@ -1,0 +1,227 @@
+[
+  {
+    "reportName": "StopRansomware: Black Basta (CISA AA24-131A)",
+    "fileName": "cisa-black-basta-aa24-131a.md",
+    "reportChars": 3533,
+    "sections": 7,
+    "iocCount": 12,
+    "iocsByType": {
+      "ipv4": 4,
+      "url": 1,
+      "domain": 2,
+      "cve": 5
+    },
+    "ttpCount": 6,
+    "mappingCount": 6,
+    "techniqueIds": [
+      "T1566.003",
+      "T1036.005",
+      "T1003.001",
+      "T1562.001",
+      "T1567.002",
+      "T1490"
+    ],
+    "sigmaRuleCount": 6,
+    "validRuleCount": 6,
+    "qualityScores": [
+      7.6,
+      7.8,
+      7.9,
+      8.1,
+      8.1,
+      8.1
+    ],
+    "avgQualityScore": 7.933333333333334,
+    "apiCalls": 8,
+    "totalTokens": 18493,
+    "totalCostUsd": 0.0288,
+    "durationMs": 36278,
+    "ttpDurationMs": 12934,
+    "mapDurationMs": 4286,
+    "genDurationMs": 19053,
+    "rules": [
+      {
+        "title": "Suspicious Network Connection by Remote Access Tools via Black Basta Vishing",
+        "techniqueId": "T1566.003",
+        "valid": true,
+        "qualityScore": 7.6
+      },
+      {
+        "title": "SoftPerfect Network Scanner Masquerading as Intel or Dell Utility",
+        "techniqueId": "T1036.005",
+        "valid": true,
+        "qualityScore": 7.8
+      },
+      {
+        "title": "Credential Dumping via Mimikatz LSASS Memory Access",
+        "techniqueId": "T1003.001",
+        "valid": true,
+        "qualityScore": 7.9
+      },
+      {
+        "title": "Disable or Modify Security Tools via Backstab or PowerShell",
+        "techniqueId": "T1562.001",
+        "valid": true,
+        "qualityScore": 8.1
+      },
+      {
+        "title": "Exfiltration to Cloud Storage via RClone Network Connection",
+        "techniqueId": "T1567.002",
+        "valid": true,
+        "qualityScore": 8.1
+      },
+      {
+        "title": "Inhibit System Recovery via Vssadmin Shadow Copy Deletion",
+        "techniqueId": "T1490",
+        "valid": true,
+        "qualityScore": 8.1
+      }
+    ]
+  },
+  {
+    "reportName": "StopRansomware: Interlock (CISA AA25-203A)",
+    "fileName": "cisa-interlock-aa25-203a.md",
+    "reportChars": 4229,
+    "sections": 8,
+    "iocCount": 7,
+    "iocsByType": {
+      "url": 1,
+      "sha256": 5,
+      "registry_key": 1
+    },
+    "ttpCount": 6,
+    "mappingCount": 6,
+    "techniqueIds": [
+      "T1204.001",
+      "T1547.001",
+      "T1082",
+      "T1070.004",
+      "T1567.002",
+      "T1486"
+    ],
+    "sigmaRuleCount": 6,
+    "validRuleCount": 6,
+    "qualityScores": [
+      8.1,
+      7.5,
+      8.1,
+      7.8,
+      8.1,
+      6.3
+    ],
+    "avgQualityScore": 7.6499999999999995,
+    "apiCalls": 8,
+    "totalTokens": 18634,
+    "totalCostUsd": 0.0279,
+    "durationMs": 44483,
+    "ttpDurationMs": 14168,
+    "mapDurationMs": 4286,
+    "genDurationMs": 26027,
+    "rules": [
+      {
+        "title": "Suspicious PowerShell Execution via Run Dialog Linked to ClickFix Campaign",
+        "techniqueId": "T1204.001",
+        "valid": true,
+        "qualityScore": 8.1
+      },
+      {
+        "title": "Persistence via Chrome Updater Registry Run Key",
+        "techniqueId": "T1547.001",
+        "valid": true,
+        "qualityScore": 7.5
+      },
+      {
+        "title": "System Information Discovery via Native Windows Tools and PowerShell",
+        "techniqueId": "T1082",
+        "valid": true,
+        "qualityScore": 8.1
+      },
+      {
+        "title": "Indicator Removal via Cleanup DLL Deletion Activity",
+        "techniqueId": "T1070.004",
+        "valid": true,
+        "qualityScore": 7.8
+      },
+      {
+        "title": "Exfiltration to Azure Blob Storage via AzCopy or Storage Explorer",
+        "techniqueId": "T1567",
+        "valid": true,
+        "qualityScore": 8.1
+      },
+      {
+        "title": "Creation of Interlock Ransomware Artifacts via File Events",
+        "techniqueId": "T1486",
+        "valid": true,
+        "qualityScore": 6.3
+      }
+    ]
+  },
+  {
+    "reportName": "SVR Cyber Actors Adapt Tactics for Initial Cloud Access (CISA AA24-057A)",
+    "fileName": "cisa-svr-cloud-aa24-057a.md",
+    "reportChars": 4387,
+    "sections": 8,
+    "iocCount": 1,
+    "iocsByType": {
+      "url": 1
+    },
+    "ttpCount": 5,
+    "mappingCount": 5,
+    "techniqueIds": [
+      "T1110.003",
+      "T1550.001",
+      "T1621",
+      "T1090.002",
+      "T1098.005"
+    ],
+    "sigmaRuleCount": 5,
+    "validRuleCount": 4,
+    "qualityScores": [
+      6,
+      8.1,
+      8.2,
+      8.1,
+      8.1
+    ],
+    "avgQualityScore": 7.7,
+    "apiCalls": 7,
+    "totalTokens": 15407,
+    "totalCostUsd": 0.024,
+    "durationMs": 45488,
+    "ttpDurationMs": 8487,
+    "mapDurationMs": 3502,
+    "genDurationMs": 33497,
+    "rules": [
+      {
+        "title": "Potential Password Spraying via Windows Security Event Logs",
+        "techniqueId": "T1110.003",
+        "valid": false,
+        "qualityScore": 6
+      },
+      {
+        "title": "Suspicious OAuth Token Extraction via Command Line Tools",
+        "techniqueId": "T1550.001",
+        "valid": true,
+        "qualityScore": 8.1
+      },
+      {
+        "title": "Potential MFA Fatigue Attack via Repeated Failed Logon Attempts",
+        "techniqueId": "T1621",
+        "valid": true,
+        "qualityScore": 8.2
+      },
+      {
+        "title": "Suspicious External Proxy Connection via Residential Proxy Tools",
+        "techniqueId": "T1090.002",
+        "valid": true,
+        "qualityScore": 8.1
+      },
+      {
+        "title": "Potential Rogue Device Registration via Microsoft-Windows-Security-Auditing",
+        "techniqueId": "T1098.005",
+        "valid": true,
+        "qualityScore": 8.1
+      }
+    ]
+  }
+]

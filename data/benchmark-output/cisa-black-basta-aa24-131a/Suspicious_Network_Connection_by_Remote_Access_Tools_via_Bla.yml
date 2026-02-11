@@ -1,0 +1,36 @@
+title: Suspicious Network Connection by Remote Access Tools via Black Basta Vishing
+id: b3c5d375-ea4f-43cb-b74c-e1e41acbc6d5
+status: experimental
+description: Detects network connections initiated by remote access tools like AnyDesk or Quick Assist to known malicious IP addresses or domains associated with Black Basta vishing campaigns. Threat actors use social engineering via Microsoft Teams or phone calls to trick users into installing these tools to gain initial access.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.initial_access
+  - attack.t1566.003
+  - attack.t1219
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_tools:
+    Image:
+      - "*\\anydesk.exe"
+      - "*\\remoteassistance.exe"
+      - "*\\quickassist.exe"
+  selection_iocs:
+    DestinationIp:
+      - 170.130.165.73
+      - 45.11.181.44
+      - 66.42.118.54
+      - 79.132.130.211
+    DestinationHostname:
+      - "*moereng.com"
+      - "*exckicks.com"
+  filter_initiated:
+    Initiated: false
+  condition: selection_tools and selection_iocs and not filter_initiated
+falsepositives:
+  - Legitimate use of AnyDesk or Quick Assist by IT support staff to connect to known infrastructure (though the specific IOCs listed are high-confidence malicious)
+  - Testing or simulation of vishing attacks by internal Red Teams
+level: critical

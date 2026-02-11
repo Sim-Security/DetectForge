@@ -1,0 +1,40 @@
+title: Potential Rogue Device Registration via Microsoft-Windows-Security-Auditing
+id: 9ba41818-a2b4-433f-8b25-19f2de04a25f
+status: experimental
+description: Detects potential rogue device registration activity by monitoring for specific service-related events and logon patterns associated with device enrollment. Attackers register their own devices to bypass conditional access policies and maintain persistence within a cloud-integrated environment.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.persistence
+  - attack.t1098.005
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_device_registration:
+    EventID:
+      - 4768
+      - 4769
+    ServiceName:
+      - Microsoft.Azure.Sync.Device*
+      - DeviceRegistrationService
+      - AzureAD*
+  selection_logon_context:
+    EventID:
+      - 4624
+    LogonType:
+      - 3
+    TargetUserName:
+      - "*-DeviceOwner"
+      - DSRMSERVICE*
+  filter_internal_ips:
+    IpAddress:
+      - 127.0.0.1
+      - ::1
+  condition: (selection_device_registration or selection_logon_context) and not filter_internal_ips
+falsepositives:
+  - Legitimate user self-enrollment of mobile devices or laptops via Intune/Azure AD
+  - Automated deployment of virtual machines using managed identities
+  - IT helpdesk staff performing bulk device registrations during hardware refresh cycles
+level: high

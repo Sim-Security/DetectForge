@@ -1,0 +1,40 @@
+title: SoftPerfect Network Scanner Masquerading as Intel or Dell Utility
+id: 5f86a475-4cf4-4bd1-9213-54dd8b8fd998
+status: experimental
+description: Detects the execution of SoftPerfect Network Scanner (netscan.exe) where the binary has been renamed to 'intel.exe' or 'dell.exe' to masquerade as a legitimate system utility. This technique is frequently used by threat actors for internal network discovery while evading detection.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.defense_evasion
+  - attack.t1036.005
+  - attack.discovery
+  - attack.t1046
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_original_filename:
+    OriginalFileName: netscan.exe
+  selection_masquerading_names:
+    Image:
+      - "*\\intel.exe"
+      - "*\\dell.exe"
+  selection_suspicious_paths:
+    Image:
+      - "*\\AppData\\Local\\Temp\\*"
+      - "*\\AppData\\Roaming\\*"
+      - C:\Users\Public\*
+      - C:\Windows\Temp\*
+  selection_metadata:
+    Description: "*SoftPerfect Network Scanner*"
+    Company: SoftPerfect
+  filter_legitimate_intel:
+    Company:
+      - Intel Corporation
+      - Dell Inc.
+  condition: (selection_original_filename and selection_masquerading_names) or (selection_masquerading_names and selection_suspicious_paths) or (selection_metadata and selection_masquerading_names) and not filter_legitimate_intel
+falsepositives:
+  - Legitimate administrative use of SoftPerfect Network Scanner if it was renamed by an administrator for internal tracking (unlikely)
+  - Legitimate Intel or Dell utilities that might share similar naming conventions but lack the SoftPerfect metadata
+level: high

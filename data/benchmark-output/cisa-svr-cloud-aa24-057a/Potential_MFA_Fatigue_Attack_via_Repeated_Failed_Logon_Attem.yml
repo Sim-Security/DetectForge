@@ -1,0 +1,40 @@
+title: Potential MFA Fatigue Attack via Repeated Failed Logon Attempts
+id: 81031847-5d89-4fb7-9fe3-854ae369bb18
+status: experimental
+description: Detects patterns indicative of MFA bombing or fatigue attacks where a high volume of failed logon attempts (Status 0xC000006D, 0xC000006A) occur for a single user, potentially followed by a successful logon. This rule monitors Windows Security Event ID 4625 (Failed Logon) which often precedes or accompanies MFA push notification spamming in hybrid environments.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.credential_access
+  - attack.t1621
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_failed_logon:
+    EventID:
+      - 4625
+    Status:
+      - "0xc000006d"
+      - "0xC000006D"
+      - "0xc000006a"
+      - "0xC000006A"
+    LogonType:
+      - 3
+      - 8
+      - 10
+  filter_machine_accounts:
+    TargetUserName:
+      - "*$"
+  filter_local_system:
+    TargetUserName:
+      - SYSTEM
+      - NETWORK SERVICE
+      - LOCAL SERVICE
+  condition: selection_failed_logon and not (filter_machine_accounts or filter_local_system)
+falsepositives:
+  - Users who have recently changed their passwords and have multiple devices/applications attempting to authenticate with old credentials
+  - Misconfigured service accounts or automated scripts attempting to connect to network resources
+  - Legacy applications that do not support modern authentication and continuously retry
+level: high

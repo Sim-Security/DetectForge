@@ -1,0 +1,42 @@
+title: System Information Discovery via Native Windows Tools and PowerShell
+id: d1666ef2-e9ea-449a-b7b7-1be7943b1d8c
+status: experimental
+description: Detects the execution of native Windows discovery tools and PowerShell cmdlets used for system reconnaissance. Threat actors use these commands to identify OS configuration, running services, and network topology (ARP cache) to facilitate lateral movement, as seen in CISA AA25-203A.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.discovery
+  - attack.t1082
+  - attack.t1057
+  - attack.t1016
+  - attack.t1135
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_native_tools:
+    CommandLine:
+      - "*systeminfo*"
+      - "*tasklist /svc*"
+      - "*arp -a*"
+      - "*net view*"
+  selection_powershell_recon:
+    CommandLine:
+      - "*Get-Service*"
+      - "*Get-PSDrive*"
+      - "*WindowsIdentity.GetCurrent()*"
+  filter_legitimate_admin:
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\NETWORK SERVICE
+    ParentImage:
+      - "*\\CcmExec.exe*"
+      - "*\\MonitoringHost.exe*"
+      - "*\\taniumclient.exe*"
+  condition: (selection_native_tools or selection_powershell_recon) and not filter_legitimate_admin
+falsepositives:
+  - System administration scripts for inventory management
+  - Endpoint management agents (SCCM, Tanium, Datto) performing routine audits
+  - Troubleshooting activities by IT helpdesk personnel
+level: high

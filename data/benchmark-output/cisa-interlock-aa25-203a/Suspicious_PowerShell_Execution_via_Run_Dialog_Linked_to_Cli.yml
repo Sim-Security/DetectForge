@@ -1,0 +1,41 @@
+title: Suspicious PowerShell Execution via Run Dialog Linked to ClickFix Campaign
+id: bb736495-bfd6-44c8-ba37-3603e74052fe
+status: experimental
+description: Detects the execution of PowerShell with encoded commands or hidden windows spawned directly from explorer.exe, a behavior consistent with 'ClickFix' social engineering tactics where users are tricked into pasting malicious commands into the Windows Run dialog (Win+R).
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.execution
+  - attack.t1204.001
+  - attack.t1059.001
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_parent:
+    ParentImage:
+      - "*\\explorer.exe"
+  selection_powershell:
+    Image:
+      - "*\\powershell.exe"
+      - "*\\pwsh.exe"
+    CommandLine:
+      - "*-e *"
+      - "*-enc *"
+      - "*-encodedcommand *"
+      - "*-w hidden*"
+      - "*-windowstyle hidden*"
+  selection_clickfix_patterns:
+    CommandLine:
+      - "* [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(*"
+      - "*iex(*"
+      - "*Invoke-Expression*"
+  filter_null_parent_cmd:
+    ParentCommandLine: null
+  condition: selection_parent and (selection_powershell or selection_clickfix_patterns) and not filter_null_parent_cmd
+falsepositives:
+  - Legitimate administrative shortcuts pinned to the taskbar or desktop that use explorer.exe as a parent
+  - Custom internal tools that launch PowerShell scripts via explorer.exe shell execution
+  - Users manually running complex PowerShell commands via the Run dialog for troubleshooting
+level: high

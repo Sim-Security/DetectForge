@@ -1,0 +1,30 @@
+title: Potential Kerberoasting Activity via RC4 Ticket Request
+id: 7a631344-0e3c-4654-acd8-efd6f7a2c1d7
+status: experimental
+description: Detects Kerberos service ticket requests (Event ID 4769) using RC4 encryption (0x17). This is a common indicator of Kerberoasting attacks, where actors request tickets for service accounts to crack the hashes offline. This specific encryption type is often targeted because it is weaker than AES. This rule aligns with observed TTPs involving service account hash extraction.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.credential_access
+  - attack.t1558.003
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_kerberoast:
+    EventID: 4769
+    TicketEncryptionType: "0x17"
+    Status: "0x0"
+  filter_machine_accounts:
+    TargetUserName: "*$"
+  filter_legitimate_services:
+    ServiceName:
+      - krbtgt
+      - "*$"
+  condition: selection_kerberoast and not (filter_machine_accounts or filter_legitimate_services)
+falsepositives:
+  - Legacy applications that do not support AES encryption for Kerberos
+  - Older Windows operating systems or functional levels within the Active Directory environment
+  - Misconfigured service accounts where 'This account supports Kerberos AES 128/256 bit encryption' is not checked
+level: high

@@ -1,0 +1,48 @@
+title: Suspicious OAuth Token Extraction via Command Line Tools
+id: b55116f3-4ad1-466d-9663-a38361476187
+status: experimental
+description: Detects the use of command-line tools to extract or manipulate OAuth and application access tokens from local storage or browser profiles. Attackers use these stolen tokens to bypass MFA and impersonate user sessions (T1550.001). This rule focuses on the endpoint execution patterns associated with token theft tools and infostealers.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.defense_evasion
+  - attack.t1550.001
+  - attack.credential_access
+  - attack.t1539
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_browser_paths:
+    CommandLine:
+      - "*\\Local Extension Settings\\*"
+      - "*\\Local Storage\\leveldb*"
+      - "*\\Identity Service\\*"
+  selection_tools:
+    CommandLine:
+      - "*Roadtoken*"
+      - "*AADInternals*"
+      - "*Get-AzureADToken*"
+      - "*Get-OktaToken*"
+      - "*extract-token*"
+      - "*cookie-exporter*"
+  selection_cli_auth:
+    Image:
+      - "*\\az.exe"
+      - "*\\kubectl.exe"
+      - "*\\gh.exe"
+    CommandLine:
+      - "*login --service-principal*"
+      - "*account get-access-token*"
+      - "*auth token*"
+  filter_legitimate_admin:
+    User:
+      - NT AUTHORITY\SYSTEM
+      - Window Manager\*
+  condition: (selection_browser_paths or selection_tools or selection_cli_auth) and not filter_legitimate_admin
+falsepositives:
+  - Legitimate administrative scripts using Azure CLI or GitHub CLI for automation
+  - Developers debugging local OAuth flows or browser extensions
+  - Backup software accessing browser profile directories
+level: high

@@ -1,0 +1,51 @@
+title: Exfiltration to Cloud Storage via AzCopy or WinSCP
+id: 83138b5c-bc93-4eaf-994b-dedfb57aff98
+status: experimental
+description: Detects network connections to Azure Blob Storage endpoints initiated by tools commonly used for data exfiltration such as AzCopy, WinSCP, or Azure Storage Explorer. Attackers leverage these legitimate tools to move stolen data to attacker-controlled cloud environments, often masquerading as administrative traffic.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.exfiltration
+  - attack.t1567.002
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_tools:
+    Image:
+      - "*\\azcopy.exe"
+      - "*\\winscp.exe"
+      - "*\\StorageExplorer.exe"
+  selection_destination:
+    DestinationHostname:
+      - "*.blob.core.windows.net*"
+      - "*.file.core.windows.net*"
+      - "*.dfs.core.windows.net*"
+  filter_local_ips:
+    DestinationIp:
+      - 10.*
+      - 192.168.*
+      - 172.16.*
+      - 172.17.*
+      - 172.18.*
+      - 172.19.*
+      - 172.20.*
+      - 172.21.*
+      - 172.22.*
+      - 172.23.*
+      - 172.24.*
+      - 172.25.*
+      - 172.26.*
+      - 172.27.*
+      - 172.28.*
+      - 172.29.*
+      - 172.30.*
+      - 172.31.*
+      - 127.*
+  condition: selection_tools and selection_destination and not filter_local_ips
+falsepositives:
+  - Legitimate administrative backups to Azure cloud storage
+  - Developers using Azure Storage Explorer for authorized cloud application management
+  - Automated scripts using AzCopy for data synchronization in IT operations
+level: high

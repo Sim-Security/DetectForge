@@ -224,10 +224,13 @@ describe('scoreRuleQuality', () => {
     expect(result.dimensions.syntaxValidity).toBe(1);
   });
 
-  it('scores documentation at 1 when missing', () => {
+  it('scores documentation from rule content when RuleDocumentation is missing', () => {
     const rule = makeYaraGeneratedRule({ documentation: undefined });
     const result = scoreRuleQuality(rule);
-    expect(result.dimensions.documentation).toBe(1);
+    // Without RuleDocumentation, scorer infers from rule content (description, tags)
+    // YARA rule has description "Test rule" (short) + no tags → low but not 1
+    expect(result.dimensions.documentation).toBeGreaterThanOrEqual(2);
+    expect(result.dimensions.documentation).toBeLessThanOrEqual(5);
   });
 
   it('scores documentation highly when fully populated', () => {

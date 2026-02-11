@@ -1,0 +1,33 @@
+title: Exfiltration to Azure Blob Storage via AzCopy or Storage Explorer
+id: 911b9cb5-9d67-4515-b0a9-ba2a8427e011
+status: experimental
+description: Detects outbound network connections to Azure Blob Storage endpoints initiated by data transfer tools like AzCopy, Azure Storage Explorer, or WinSCP. Threat actors use these legitimate tools to exfiltrate stolen data to attacker-controlled cloud storage, as seen in recent campaigns.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.exfiltration
+  - attack.t1567
+  - attack.t1567.002
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_tools:
+    Image:
+      - "*\\azcopy.exe"
+      - "*\\MicrosoftAzureStorageExplorer.exe"
+      - "*\\StorageExplorer.exe"
+      - "*\\winscp.exe"
+  selection_destination:
+    DestinationHostname:
+      - "*.blob.core.windows.net"
+      - "*.dfs.core.windows.net"
+  filter_initiated:
+    Initiated: false
+  condition: selection_tools and selection_destination and not filter_initiated
+falsepositives:
+  - Legitimate administrative use of AzCopy for cloud migrations or backups
+  - Developers using Azure Storage Explorer to manage application data
+  - Automated backup software that utilizes Azure Blob storage as a backend
+level: high

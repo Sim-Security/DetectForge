@@ -1,0 +1,62 @@
+title: Suspicious External Proxy Connection via Residential Proxy Tools
+id: 83155c3f-c20a-4cde-8cc6-ac65c29d3256
+status: experimental
+description: Detects network connections initiated by common residential proxy client software or tools used to tunnel traffic through external residential IP spaces. Attackers use these to evade IP reputation filters and geolocation policies by appearing as legitimate consumer ISP traffic.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.command_and_control
+  - attack.t1090.002
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_proxy_tools:
+    Image:
+      - "*\\brightdata.exe"
+      - "*\\luminati.exe"
+      - "*\\oxylabs.exe"
+      - "*\\smartproxy.exe"
+      - "*\\packetstream.exe"
+      - "*\\honeygain.exe"
+      - "*\\infatica.exe"
+      - "*\\netnut.exe"
+      - "*\\geosurf.exe"
+  selection_tunneling:
+    Image:
+      - "*\\plink.exe"
+      - "*\\stunnel.exe"
+      - "*\\gost.exe"
+    DestinationPort:
+      - 1080
+      - 3128
+      - 8080
+      - 8888
+  filter_local_ranges:
+    DestinationIp:
+      - 10.*
+      - 192.168.*
+      - 172.16.*
+      - 172.17.*
+      - 172.18.*
+      - 172.19.*
+      - 172.20.*
+      - 172.21.*
+      - 172.22.*
+      - 172.23.*
+      - 172.24.*
+      - 172.25.*
+      - 172.26.*
+      - 172.27.*
+      - 172.28.*
+      - 172.29.*
+      - 172.30.*
+      - 172.31.*
+      - 127.*
+  condition: (selection_proxy_tools or selection_tunneling) and not filter_local_ranges
+falsepositives:
+  - Legitimate use of residential proxy services for web scraping or market research by authorized departments
+  - Developers testing applications behind different geographic exit nodes
+  - Users running 'passive income' bandwidth sharing apps (though often against corporate policy)
+level: high

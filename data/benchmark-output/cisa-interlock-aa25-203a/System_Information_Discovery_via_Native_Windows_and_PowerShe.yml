@@ -1,0 +1,40 @@
+title: System Information Discovery via Native Windows and PowerShell Commands
+id: 33deb7e2-fe21-4be1-ac9d-bf7d09802b02
+status: experimental
+description: Detects the execution of multiple system discovery commands such as systeminfo, tasklist /svc, and arp -a, alongside PowerShell-based enumeration of drives and services. This activity is characteristic of the reconnaissance phase where an attacker attempts to map system configuration and network topology.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.discovery
+  - attack.t1082
+  - attack.t1057
+  - attack.t1049
+  - attack.t1007
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_native_tools:
+    CommandLine:
+      - "*systeminfo*"
+      - "*tasklist /svc*"
+      - "*arp -a*"
+  selection_powershell_recon:
+    Image:
+      - "*\\powershell.exe"
+      - "*\\pwsh.exe"
+    CommandLine:
+      - "*Get-PSDrive*"
+      - "*Get-Service*"
+      - "*WindowsIdentity.GetCurrent()*"
+  filter_legitimate_admins:
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\NETWORK SERVICE
+  condition: (selection_native_tools or selection_powershell_recon) and not filter_legitimate_admins
+falsepositives:
+  - Legitimate administrative troubleshooting or system auditing scripts
+  - Inventory management software performing periodic scans
+  - Help desk personnel gathering system information for support tickets
+level: high

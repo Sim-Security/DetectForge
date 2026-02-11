@@ -5,14 +5,20 @@
  * detection logic, documentation, ATT&CK mapping, false positive
  * handling) and an aggregate overall score.  All scoring is
  * heuristic-based -- no AI calls required.
+ *
+ * v2: Rewrote detection logic, documentation, and FP handling scorers
+ * to analyze actual rule content instead of only checking for the
+ * RuleDocumentation object (which the generation pipeline never creates).
  */
 
 import type {
   GeneratedRule,
   RuleFormat,
   RuleDocumentation,
+  SigmaRule,
   ValidationResult,
 } from '@/types/detection-rule.js';
+import { getTemplate } from '@/generation/sigma/templates.js';
 
 // ---------------------------------------------------------------------------
 // Public Types
@@ -73,9 +79,9 @@ export function scoreRuleQuality(rule: GeneratedRule): RuleQualityScore {
 
   const syntaxValidity = scoreSyntaxValidity(rule.validation);
   const detectionLogic = scoreDetectionLogic(rule);
-  const documentation = scoreDocumentation(rule.documentation);
+  const documentation = scoreDocumentation(rule.documentation, rule);
   const attackMapping = scoreAttackMapping(rule);
-  const falsePosHandling = scoreFalsePositiveHandling(rule.documentation);
+  const falsePosHandling = scoreFalsePositiveHandling(rule.documentation, rule);
 
   const dimensions = {
     syntaxValidity,
@@ -165,63 +171,194 @@ function scoreSyntaxValidity(validation: ValidationResult): number {
 }
 
 /**
- * Score detection logic based on:
- * - Condition complexity (operator count / string or field count)
- * - Number of detection patterns
+ * Score detection logic by analyzing actual rule content:
+ *
+ * Sigma: field relevance (vs template), value pattern diversity,
+ *        condition complexity (filters, boolean operators).
+ * YARA:  string count, string type diversity, condition complexity.
+ * Suricata: content match count, flow presence, protocol specificity.
  */
 function scoreDetectionLogic(rule: GeneratedRule): number {
-  let score = 5; // baseline
+  let score = 2; // low baseline — must earn points from content
 
   if (rule.format === 'yara' && rule.yara) {
-    const stringCount = rule.yara.strings?.length ?? 0;
-    const conditionOps = countConditionOperators(rule.yara.condition ?? '');
-
-    // More strings = better
-    if (stringCount >= 5) score += 3;
-    else if (stringCount >= 3) score += 2;
-    else if (stringCount >= 2) score += 1;
-    else if (stringCount === 0) score -= 2;
-
-    // Some condition complexity is good
-    if (conditionOps >= 3) score += 2;
-    else if (conditionOps >= 1) score += 1;
-
+    score = scoreYaraDetectionLogic(rule);
   } else if (rule.format === 'suricata' && rule.suricata) {
-    const contentCount = rule.suricata.options.filter(
-      o => o.keyword === 'content' || o.keyword === 'pcre',
-    ).length;
-    const hasFlow = rule.suricata.options.some(o => o.keyword === 'flow');
-
-    if (contentCount >= 3) score += 3;
-    else if (contentCount >= 2) score += 2;
-    else if (contentCount >= 1) score += 1;
-    else score -= 2;
-
-    if (hasFlow) score += 1;
-
+    score = scoreSuricataDetectionLogic(rule);
   } else if (rule.format === 'sigma' && rule.sigma) {
-    // Count detection selections (keys other than "condition")
-    const detectionKeys = Object.keys(rule.sigma.detection).filter(k => k !== 'condition');
-    if (detectionKeys.length >= 3) score += 3;
-    else if (detectionKeys.length >= 2) score += 2;
-    else if (detectionKeys.length >= 1) score += 1;
-
-    // Check condition complexity
-    const condition = rule.sigma.detection.condition ?? '';
-    const ops = countConditionOperators(condition);
-    if (ops >= 2) score += 1;
+    score = scoreSigmaDetectionLogic(rule.sigma);
   }
 
   return clamp(score, 1, 10);
 }
 
 /**
- * Score documentation completeness.
- * 10 if all documentation fields are present and populated, 1 if missing.
+ * Sigma-specific detection logic scorer.
+ * Analyzes field relevance, value patterns, and condition structure.
  */
-function scoreDocumentation(doc: RuleDocumentation | undefined): number {
-  if (!doc) return 1;
+function scoreSigmaDetectionLogic(sigma: SigmaRule): number {
+  let score = 2;
+  const detection = sigma.detection;
+  const detectionKeys = Object.keys(detection).filter(k => k !== 'condition');
 
+  // --- 1. Selection/filter block count (0-2 pts) ---
+  if (detectionKeys.length >= 4) score += 2;
+  else if (detectionKeys.length >= 2) score += 1;
+
+  // --- 2. Has explicit filter blocks (0-2 pts) ---
+  const filterKeys = detectionKeys.filter(k =>
+    k.startsWith('filter') || k.startsWith('exclusion'),
+  );
+  if (filterKeys.length >= 2) score += 2;
+  else if (filterKeys.length >= 1) score += 1;
+
+  // --- 3. Field relevance — check fields against logsource template (0-2 pts) ---
+  const category = sigma.logsource.category ?? sigma.logsource.service ?? '';
+  const template = getTemplate(category);
+  const usedFields = extractSigmaFields(detection, detectionKeys);
+
+  if (template && usedFields.size > 0) {
+    const knownFields = new Set(template.availableFields);
+    let relevantCount = 0;
+    for (const field of usedFields) {
+      if (knownFields.has(field)) relevantCount++;
+    }
+    const relevanceRatio = relevantCount / usedFields.size;
+    if (relevanceRatio >= 0.5 && relevantCount >= 2) score += 2;
+    else if (relevanceRatio >= 0.3 || relevantCount >= 1) score += 1;
+  } else if (usedFields.size >= 2) {
+    // No template match but still using multiple fields
+    score += 1;
+  }
+
+  // --- 4. Value pattern diversity — wildcards, lists, specificity (0-2 pts) ---
+  const valueAnalysis = analyzeSigmaValues(detection, detectionKeys);
+  if (valueAnalysis.totalValues >= 5 && valueAnalysis.hasWildcards) score += 2;
+  else if (valueAnalysis.totalValues >= 3 || valueAnalysis.hasWildcards) score += 1;
+
+  // --- 5. Condition complexity (0-2 pts) ---
+  const condition = detection.condition ?? '';
+  const condScore = scoreConditionComplexity(condition);
+  score += condScore;
+
+  return score;
+}
+
+/**
+ * YARA-specific detection logic scorer.
+ */
+function scoreYaraDetectionLogic(rule: GeneratedRule): number {
+  let score = 2;
+  const yara = rule.yara!;
+  const stringCount = yara.strings?.length ?? 0;
+
+  // String count (0-3 pts)
+  if (stringCount >= 5) score += 3;
+  else if (stringCount >= 3) score += 2;
+  else if (stringCount >= 1) score += 1;
+
+  // String type diversity (0-1 pt)
+  if (yara.strings && yara.strings.length > 0) {
+    const types = new Set(yara.strings.map(s => s.type));
+    if (types.size >= 2) score += 1;
+  }
+
+  // String modifiers used (0-1 pt)
+  const hasModifiers = yara.strings?.some(s => s.modifiers.length > 0) ?? false;
+  if (hasModifiers) score += 1;
+
+  // Condition complexity (0-2 pts)
+  const conditionOps = countConditionOperators(yara.condition ?? '');
+  if (conditionOps >= 3) score += 2;
+  else if (conditionOps >= 1) score += 1;
+
+  return score;
+}
+
+/**
+ * Suricata-specific detection logic scorer.
+ */
+function scoreSuricataDetectionLogic(rule: GeneratedRule): number {
+  let score = 2;
+  const suricata = rule.suricata!;
+  const options = suricata.options;
+
+  // Content/pcre count (0-3 pts)
+  const contentCount = options.filter(
+    o => o.keyword === 'content' || o.keyword === 'pcre',
+  ).length;
+  if (contentCount >= 4) score += 3;
+  else if (contentCount >= 2) score += 2;
+  else if (contentCount >= 1) score += 1;
+
+  // Flow directive (0-1 pt)
+  if (options.some(o => o.keyword === 'flow')) score += 1;
+
+  // Depth/offset/within/distance modifiers (0-1 pt)
+  const hasPositionModifiers = options.some(o =>
+    ['depth', 'offset', 'within', 'distance'].includes(o.keyword),
+  );
+  if (hasPositionModifiers) score += 1;
+
+  // Protocol specificity (0-1 pt)
+  if (suricata.protocol !== 'ip' && suricata.protocol !== 'any') score += 1;
+
+  // Threshold/flowbits (0-1 pt)
+  const hasAdvanced = options.some(o =>
+    ['threshold', 'flowbits', 'detection_filter'].includes(o.keyword),
+  );
+  if (hasAdvanced) score += 1;
+
+  return score;
+}
+
+/**
+ * Score documentation quality.
+ * When a full RuleDocumentation object exists, score it directly.
+ * When missing, infer documentation quality from rule content
+ * (description, tags, falsepositives array on Sigma rules).
+ */
+function scoreDocumentation(doc: RuleDocumentation | undefined, rule: GeneratedRule): number {
+  // If full documentation object exists, use original scorer
+  if (doc) {
+    return scoreDocFromObject(doc);
+  }
+
+  // Infer documentation quality from rule content
+  let score = 1;
+
+  // Description quality (0-3 pts)
+  const description = getRuleDescription(rule);
+  if (description) {
+    const descLen = description.trim().length;
+    if (descLen >= 100) score += 3;
+    else if (descLen >= 50) score += 2;
+    else if (descLen > 0) score += 1;
+  }
+
+  // Tags present and meaningful (0-2 pts)
+  const tags = getRuleTags(rule);
+  const attackTags = tags.filter(t => t.startsWith('attack.'));
+  if (attackTags.length >= 2) score += 2;
+  else if (attackTags.length >= 1) score += 1;
+
+  // Has references/source (0-1 pt)
+  if (rule.format === 'sigma' && rule.sigma?.references && rule.sigma.references.length > 0) {
+    score += 1;
+  } else if (rule.format === 'yara' && rule.yara?.meta.reference) {
+    score += 1;
+  }
+
+  // Has inline FP documentation (0-2 pts)
+  const fpStrings = getInlineFalsePositives(rule);
+  if (fpStrings.length >= 3) score += 2;
+  else if (fpStrings.length >= 1) score += 1;
+
+  return clamp(score, 1, 10);
+}
+
+/** Score from a full RuleDocumentation object. */
+function scoreDocFromObject(doc: RuleDocumentation): number {
   let fieldsPresent = 0;
   const totalFields = DOC_FIELDS.length;
 
@@ -231,7 +368,6 @@ function scoreDocumentation(doc: RuleDocumentation | undefined): number {
     if (typeof value === 'string' && value.trim() === '') continue;
     if (Array.isArray(value) && value.length === 0) continue;
     if (typeof value === 'object' && !Array.isArray(value)) {
-      // attackMapping object -- check it has at least techniqueId
       const obj = value as Record<string, unknown>;
       if (obj.techniqueId && String(obj.techniqueId).trim() !== '') {
         fieldsPresent++;
@@ -279,22 +415,60 @@ function scoreAttackMapping(rule: GeneratedRule): number {
 }
 
 /**
- * Score false positive handling based on:
- * - Number of FP scenarios documented
- * - Presence of tuning advice
+ * Score false positive handling.
+ * When a full RuleDocumentation exists, use its structured FP data.
+ * Otherwise, infer from rule content: Sigma falsepositives[] array,
+ * filter/exclusion blocks in detection, description mentions.
  */
-function scoreFalsePositiveHandling(doc: RuleDocumentation | undefined): number {
-  if (!doc) return 1;
+function scoreFalsePositiveHandling(doc: RuleDocumentation | undefined, rule: GeneratedRule): number {
+  // If full documentation exists, use the structured scorer
+  if (doc) {
+    return scoreFpFromDoc(doc);
+  }
 
+  // Infer FP handling from rule content
+  let score = 1;
+
+  // Inline falsepositives strings (0-3 pts)
+  const fpStrings = getInlineFalsePositives(rule);
+  if (fpStrings.length >= 3) score += 3;
+  else if (fpStrings.length >= 2) score += 2;
+  else if (fpStrings.length >= 1) score += 1;
+
+  // FP string quality — longer/more specific is better (0-2 pts)
+  if (fpStrings.length > 0) {
+    const avgLen = fpStrings.reduce((sum, s) => sum + s.length, 0) / fpStrings.length;
+    if (avgLen >= 40) score += 2;
+    else if (avgLen >= 20) score += 1;
+  }
+
+  // Detection has filter/exclusion blocks (0-2 pts) — shows FP awareness
+  if (rule.format === 'sigma' && rule.sigma) {
+    const detKeys = Object.keys(rule.sigma.detection);
+    const filterCount = detKeys.filter(k =>
+      k.startsWith('filter') || k.startsWith('exclusion'),
+    ).length;
+    if (filterCount >= 2) score += 2;
+    else if (filterCount >= 1) score += 1;
+  }
+
+  // Level is set appropriately — not always "critical" (0-1 pt)
+  if (rule.format === 'sigma' && rule.sigma) {
+    if (rule.sigma.level !== 'critical') score += 1;
+  }
+
+  return clamp(score, 1, 10);
+}
+
+/** Score FP handling from a full RuleDocumentation object. */
+function scoreFpFromDoc(doc: RuleDocumentation): number {
   let score = 1;
   const fpScenarios = doc.falsePositives ?? [];
 
-  // Base score from scenario count
   if (fpScenarios.length >= 3) score += 4;
   else if (fpScenarios.length >= 2) score += 3;
   else if (fpScenarios.length >= 1) score += 2;
 
-  // Bonus for tuning advice in each scenario
   let tuningCount = 0;
   for (const fp of fpScenarios) {
     if (fp.tuningAdvice && fp.tuningAdvice.trim() !== '') tuningCount++;
@@ -304,17 +478,127 @@ function scoreFalsePositiveHandling(doc: RuleDocumentation | undefined): number 
     score += Math.round(tuningRatio * 3);
   }
 
-  // Bonus for tuning recommendations at the doc level
   if (doc.tuningRecommendations && doc.tuningRecommendations.length > 0) {
     score += 1;
   }
 
-  // Bonus for coverage gaps identified
   if (doc.coverageGaps && doc.coverageGaps.length > 0) {
     score += 1;
   }
 
   return clamp(score, 1, 10);
+}
+
+// ---------------------------------------------------------------------------
+// Content Analysis Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract all field names used in Sigma detection blocks.
+ */
+function extractSigmaFields(
+  detection: Record<string, unknown>,
+  detectionKeys: string[],
+): Set<string> {
+  const fields = new Set<string>();
+  for (const key of detectionKeys) {
+    const block = detection[key];
+    if (block && typeof block === 'object' && !Array.isArray(block)) {
+      for (const fieldName of Object.keys(block as Record<string, unknown>)) {
+        fields.add(fieldName);
+      }
+    }
+  }
+  return fields;
+}
+
+/**
+ * Analyze value patterns in Sigma detection blocks.
+ */
+function analyzeSigmaValues(
+  detection: Record<string, unknown>,
+  detectionKeys: string[],
+): { totalValues: number; hasWildcards: boolean; hasLists: boolean } {
+  let totalValues = 0;
+  let hasWildcards = false;
+  let hasLists = false;
+
+  for (const key of detectionKeys) {
+    const block = detection[key];
+    if (block && typeof block === 'object' && !Array.isArray(block)) {
+      for (const value of Object.values(block as Record<string, unknown>)) {
+        if (Array.isArray(value)) {
+          hasLists = true;
+          totalValues += value.length;
+          for (const v of value) {
+            if (typeof v === 'string' && v.includes('*')) hasWildcards = true;
+          }
+        } else {
+          totalValues++;
+          if (typeof value === 'string' && value.includes('*')) hasWildcards = true;
+        }
+      }
+    }
+  }
+
+  return { totalValues, hasWildcards, hasLists };
+}
+
+/**
+ * Score condition complexity — looks at boolean structure, not just keyword count.
+ * Returns 0-2 points.
+ */
+function scoreConditionComplexity(condition: string): number {
+  let pts = 0;
+
+  // Has boolean operators (and/or)
+  const hasBooleanOps = /\b(and|or)\b/i.test(condition);
+  if (hasBooleanOps) pts += 1;
+
+  // Has negation (not filter) — shows FP awareness in condition
+  const hasNot = /\bnot\b/i.test(condition);
+  // Has grouping or multiple clauses
+  const hasGrouping = condition.includes('(') && condition.includes(')');
+  // References multiple named blocks
+  const blockRefs = condition.match(/\b(selection\w*|filter\w*|exclusion\w*)\b/gi);
+  const uniqueBlocks = new Set(blockRefs?.map(b => b.toLowerCase()) ?? []);
+
+  if ((hasNot && uniqueBlocks.size >= 2) || (hasGrouping && uniqueBlocks.size >= 3)) pts += 1;
+
+  return pts;
+}
+
+/**
+ * Get the rule description string regardless of format.
+ */
+function getRuleDescription(rule: GeneratedRule): string {
+  if (rule.format === 'sigma' && rule.sigma) return rule.sigma.description;
+  if (rule.format === 'yara' && rule.yara) return rule.yara.meta.description;
+  if (rule.format === 'suricata' && rule.suricata) {
+    const msg = rule.suricata.options.find(o => o.keyword === 'msg');
+    return msg?.value ?? '';
+  }
+  return '';
+}
+
+/**
+ * Get tags regardless of format.
+ */
+function getRuleTags(rule: GeneratedRule): string[] {
+  if (rule.format === 'sigma' && rule.sigma) return rule.sigma.tags;
+  if (rule.format === 'yara' && rule.yara) return rule.yara.tags;
+  return [];
+}
+
+/**
+ * Get inline false positive strings from rule content.
+ * Sigma has a dedicated falsepositives[] array; YARA/Suricata don't.
+ */
+function getInlineFalsePositives(rule: GeneratedRule): string[] {
+  if (rule.format === 'sigma' && rule.sigma) {
+    return rule.sigma.falsepositives ?? [];
+  }
+  return [];
 }
 
 // ---------------------------------------------------------------------------

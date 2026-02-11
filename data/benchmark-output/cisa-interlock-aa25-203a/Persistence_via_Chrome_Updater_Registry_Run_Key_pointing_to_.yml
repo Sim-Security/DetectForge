@@ -1,0 +1,36 @@
+title: Persistence via Chrome Updater Registry Run Key pointing to Log File
+id: e5350346-4590-4a5b-9510-a9043263649f
+status: experimental
+description: Detects the creation of a suspicious Registry Run key named 'Chrome Updater' that points to a .log file. This technique is associated with Interlock malware to maintain persistence by executing malicious code hidden within a log file upon user login.
+author: DetectForge
+date: 2026/02/10
+modified: 2026/02/10
+tags:
+  - attack.persistence
+  - attack.t1547.001
+logsource:
+  product: windows
+  category: registry_set
+detection:
+  selection_key_name:
+    TargetObject:
+      - "*\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\Chrome Updater"
+  selection_suspicious_extension:
+    TargetObject:
+      - "*\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\*"
+    Details:
+      - "*.log*"
+      - "*.txt*"
+      - "*.tmp*"
+  selection_specific_payload:
+    Details:
+      - "*autorun.log*"
+  filter_legitimate_chrome:
+    Image:
+      - C:\Program Files\Google\Chrome\Application\chrome.exe
+      - C:\Program Files (x86)\Google\Chrome\Application\chrome.exe
+  condition: (selection_key_name or (selection_suspicious_extension and selection_specific_payload)) and not filter_legitimate_chrome
+falsepositives:
+  - Legitimate software using non-standard extensions for startup scripts (rare for Run keys)
+  - Administrative scripts intentionally named to mimic browser updates for obfuscation in authorized testing
+level: high
