@@ -1,0 +1,43 @@
+title: Suspicious Service Installation for Vulnerable Driver Loading
+id: b18095e0-8d35-4c68-998c-89644dc2560f
+status: experimental
+description: Detects the installation of Windows services associated with known vulnerable drivers (RTCore64.sys, DBUtil_2_3.sys) often used in Bring Your Own Vulnerable Driver (BYOVD) attacks to disable EDR/AV protections by stripping PPL flags. This behavior is consistent with tools like EDRSandBlast used by SVR actors.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.defense_evasion
+  - attack.t1562.001
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_service_install:
+    EventID:
+      - 4697
+  selection_vulnerable_drivers:
+    ServiceName:
+      - "*RTCore64*"
+      - "*DBUtil*"
+      - "*EDRSandBlast*"
+    ProcessName:
+      - "*\\temp\\*"
+      - "*\\Users\\Public\\*"
+      - "*\\AppData\\Local\\Temp\\*"
+  filter_legitimate_msi:
+    ServiceName:
+      - RTCore64
+    ProcessName:
+      - C:\Program Files (x86)\MSI Afterburner\*
+  filter_legitimate_dell:
+    ServiceName:
+      - dbutil_2_3
+    ProcessName:
+      - C:\Windows\Temp\inv*.tmp\*
+      - C:\Program Files\Dell\*
+  condition: selection_service_install and selection_vulnerable_drivers and not (filter_legitimate_msi or filter_legitimate_dell)
+falsepositives:
+  - Legitimate installation of MSI Afterburner utility for GPU overclocking
+  - Dell firmware or driver update utilities performing legitimate maintenance tasks
+  - Authorized security auditing or penetration testing activities using BYOVD proof-of-concepts
+level: high

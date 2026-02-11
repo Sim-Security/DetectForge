@@ -1,0 +1,70 @@
+{
+  "generatedAt": "2026-02-11T16:50:05.053Z",
+  "inputFile": "cisa-svr-cloud-aa24-057a.md",
+  "reportTitle": "SVR Cyber Actors Adapt Tactics for Initial Cloud Access (CISA AA24-057A)",
+  "formats": [
+    "sigma"
+  ],
+  "modelTier": "fast",
+  "summary": {
+    "sigmaRules": 5,
+    "yaraRules": 0,
+    "suricataRules": 0,
+    "totalRules": 5,
+    "validationPassed": 5,
+    "validationFailed": 0,
+    "totalCostUsd": 0.0676,
+    "totalTokens": 42641,
+    "durationMs": 140166
+  },
+  "iocCount": 1,
+  "ttpCount": 5,
+  "attackMappingCount": 5,
+  "rules": [
+    {
+      "format": "sigma",
+      "id": "dc579214-71d3-4d7d-b14f-7ed2d77aa9fc",
+      "title": "Potential Password Spraying Attack via Windows Security Event Logs",
+      "attackTechniqueId": "T1110.003",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "b6d124fa-e33e-4216-9748-4fe1afc2790e",
+      "title": "Suspicious Microsoft Graph or Azure CLI Token Acquisition via Command Line",
+      "attackTechniqueId": "T1550.001",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "2677e05c-72ce-4d2e-bc77-5a37abdb8452",
+      "title": "Potential MFA Fatigue Attack via Repeated Logon Failures",
+      "attackTechniqueId": "T1621",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "138226a4-bb87-4158-85c7-56b2712702fd",
+      "title": "Suspicious Network Connection to Known Residential Proxy Services",
+      "attackTechniqueId": "T1090.002",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "9991dd14-2a7f-48d6-9f05-f8b3f4975efb",
+      "title": "Unauthorized Device Registration via Windows Security Events",
+      "attackTechniqueId": "T1098.005",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    }
+  ]
+}

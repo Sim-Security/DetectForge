@@ -1,0 +1,62 @@
+title: Suspicious Network Connection Initiated by OneNote via Scripting Tools
+id: 54285146-522d-4b9d-a1a9-da990c514cfb
+status: experimental
+description: Detects Microsoft OneNote initiating network connections through command-line interpreters or PowerShell, a behavior commonly associated with malicious OneNote attachments (spearphishing) that execute embedded batch files or scripts to download second-stage payloads.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.initial_access
+  - attack.t1566.001
+  - attack.execution
+  - attack.t1059.001
+  - attack.t1059.003
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_onenote_process:
+    Image:
+      - "*\\onenote.exe"
+      - "*\\onenoteim.exe"
+    Initiated:
+      - true
+  selection_suspicious_destinations:
+    DestinationPort:
+      - 80
+      - 443
+      - 8080
+    Protocol: tcp
+  filter_microsoft_updates:
+    DestinationHostname:
+      - "*.microsoft.com"
+      - "*.office.com"
+      - "*.office.net"
+      - "*.live.com"
+      - "*.onenote.com"
+  filter_local_networks:
+    DestinationIp:
+      - 10.*
+      - 192.168.*
+      - 172.16.*
+      - 172.17.*
+      - 172.18.*
+      - 172.19.*
+      - 172.20.*
+      - 172.21.*
+      - 172.22.*
+      - 172.23.*
+      - 172.24.*
+      - 172.25.*
+      - 172.26.*
+      - 172.27.*
+      - 172.28.*
+      - 172.29.*
+      - 172.30.*
+      - 172.31.*
+      - 127.*
+  condition: selection_onenote_process and selection_suspicious_destinations and not (filter_microsoft_updates or filter_local_networks)
+falsepositives:
+  - Legitimate OneNote features syncing with third-party cloud storage providers not covered in filters
+  - Users clicking on legitimate HTTP/HTTPS links embedded within a OneNote notebook
+level: high

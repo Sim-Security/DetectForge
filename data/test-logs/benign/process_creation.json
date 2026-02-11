@@ -1,0 +1,52 @@
+[
+  {
+    "Image": "C:\\Windows\\System32\\svchost.exe",
+    "OriginalFileName": "svchost.exe",
+    "CommandLine": "C:\\Windows\\System32\\svchost.exe -k netsvcs -p",
+    "ParentImage": "C:\\Windows\\System32\\services.exe",
+    "ParentCommandLine": "C:\\Windows\\System32\\services.exe",
+    "User": "NT AUTHORITY\\SYSTEM",
+    "IntegrityLevel": "System",
+    "CurrentDirectory": "C:\\Windows\\System32\\"
+  },
+  {
+    "Image": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "OriginalFileName": "chrome.exe",
+    "CommandLine": "\"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" --type=renderer",
+    "ParentImage": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "ParentCommandLine": "\"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\"",
+    "User": "CORP\\user1",
+    "IntegrityLevel": "Low",
+    "CurrentDirectory": "C:\\Program Files\\Google\\Chrome\\Application\\"
+  },
+  {
+    "Image": "C:\\Windows\\System32\\taskhostw.exe",
+    "OriginalFileName": "taskhostw.exe",
+    "CommandLine": "taskhostw.exe",
+    "ParentImage": "C:\\Windows\\System32\\svchost.exe",
+    "ParentCommandLine": "C:\\Windows\\System32\\svchost.exe -k netsvcs",
+    "User": "NT AUTHORITY\\SYSTEM",
+    "IntegrityLevel": "System",
+    "CurrentDirectory": "C:\\Windows\\System32\\"
+  },
+  {
+    "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "OriginalFileName": "PowerShell.EXE",
+    "CommandLine": "powershell.exe -ExecutionPolicy Bypass -File C:\\Scripts\\backup.ps1",
+    "ParentImage": "C:\\Windows\\System32\\svchost.exe",
+    "ParentCommandLine": "C:\\Windows\\System32\\svchost.exe -k netsvcs",
+    "User": "NT AUTHORITY\\SYSTEM",
+    "IntegrityLevel": "System",
+    "CurrentDirectory": "C:\\Scripts\\"
+  },
+  {
+    "Image": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+    "OriginalFileName": "WinWord.exe",
+    "CommandLine": "\"C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE\" /n \"C:\\Users\\user1\\Documents\\report.docx\"",
+    "ParentImage": "C:\\Windows\\explorer.exe",
+    "ParentCommandLine": "C:\\Windows\\explorer.exe",
+    "User": "CORP\\user1",
+    "IntegrityLevel": "Medium",
+    "CurrentDirectory": "C:\\Users\\user1\\Documents\\"
+  }
+]

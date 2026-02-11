@@ -1,0 +1,65 @@
+title: Suspicious Network Connection from Python IDE Process
+id: 79584b06-e2c9-46e7-b1ca-38f26f5e4c6e
+status: experimental
+description: Detects Python interpreters or IDE-related processes (like PyCharm) initiating outbound network connections to external hosting services or suspicious domains. This behavior is consistent with multi-stage malware infections where a victim is social-engineered into running a malicious script (e.g., an arbitrage bot) that fetches secondary payloads.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.initial_access
+  - attack.t1566.003
+  - attack.command_and_control
+  - attack.t1105
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_ide_python:
+    Image:
+      - "*\\python.exe"
+      - "*\\pythonw.exe"
+      - "*\\pycharm64.exe"
+      - "*\\pycharm.exe"
+      - "*\\jetbrains\\*"
+    Initiated:
+      - true
+  selection_suspicious_destinations:
+    DestinationHostname:
+      - "*drive.google.com"
+      - "*tp-globa.xyz"
+      - "*linkpc.net"
+      - "*discord.app"
+      - "*discord.com"
+  filter_internal:
+    DestinationIp:
+      - 10.*
+      - 192.168.*
+      - 172.16.*
+      - 172.17.*
+      - 172.18.*
+      - 172.19.*
+      - 172.20.*
+      - 172.21.*
+      - 172.22.*
+      - 172.23.*
+      - 172.24.*
+      - 172.25.*
+      - 172.26.*
+      - 172.27.*
+      - 172.28.*
+      - 172.29.*
+      - 172.30.*
+      - 172.31.*
+      - 127.*
+  filter_updates:
+    DestinationHostname:
+      - "*jetbrains.com"
+      - "*python.org"
+      - "*pypi.org"
+      - "*github.com"
+  condition: selection_ide_python and selection_suspicious_destinations and not (filter_internal or filter_updates)
+falsepositives:
+  - Developers using Python scripts to automate data downloads from Google Drive for legitimate projects.
+  - IDE plugins checking for updates or telemetry from non-standard developer-related domains.
+  - Legitimate use of Discord webhooks by custom Python notification scripts.
+level: high

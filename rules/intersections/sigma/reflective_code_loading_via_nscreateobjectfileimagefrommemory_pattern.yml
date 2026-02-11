@@ -1,0 +1,46 @@
+title: Reflective Code Loading via NSCreateObjectFileImageFromMemory Pattern
+id: 798b8c2d-93c3-4ee6-96bd-ec53d8d5678d
+status: experimental
+description: Detects the execution of processes that exhibit patterns associated with reflective Mach-O loading, specifically targeting the use of NSCreateObjectFileImageFromMemory-related artifacts or command-line indicators often seen in SUGARLOADER and KANDYKORN payloads. This technique allows execution of binaries directly in memory to evade disk-based security scanners.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.defense_evasion
+  - attack.t1620
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_reflective_indicators:
+    CommandLine:
+      - "*NSCreateObjectFileImageFromMemory*"
+      - "*NSLinkModule*"
+      - "*cffaedfe*"
+  selection_suspicious_paths:
+    CurrentDirectory:
+      - "*\\tmp\\*"
+      - "*\\var\\tmp\\*"
+      - "*\\Users\\Public\\*"
+    CommandLine:
+      - "*/tmp/*"
+      - "*/var/tmp/*"
+  filter_legitimate_apps:
+    Company:
+      - Apple Inc.
+      - Microsoft Corporation
+      - Google LLC
+    Image:
+      - "*\\Xcode.app\\*"
+      - "*\\Visual Studio\\*"
+  filter_system_procs:
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\NETWORK SERVICE
+    IntegrityLevel:
+      - System
+  condition: (selection_reflective_indicators or selection_suspicious_paths) and not (filter_legitimate_apps or filter_system_procs)
+falsepositives:
+  - Legitimate developer tools or debuggers (like Xcode or LLDB) that manipulate object files in memory during compilation or debugging sessions.
+  - Security software or endpoint agents that perform memory scanning or self-integrity checks using similar API patterns.
+level: high

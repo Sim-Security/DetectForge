@@ -1,0 +1,43 @@
+title: Suspicious Microsoft Graph or Azure CLI Token Acquisition via Command Line
+id: b6d124fa-e33e-4216-9748-4fe1afc2790e
+status: experimental
+description: Detects the use of command-line tools to acquire or use OAuth access tokens for cloud services, which can be a precursor to token theft or replay attacks as seen in SVR actor TTPs. Attackers often use CLI tools to export tokens or authenticate using stolen secrets to access sensitive cloud data like emails and files.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.defense_evasion
+  - attack.t1550.001
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_cli_tools:
+    Image:
+      - "*\\az.exe"
+      - "*\\microsoft-graph-cli*"
+      - "*\\mgc.exe"
+    CommandLine:
+      - "*account get-access-token*"
+      - "*login --service-principal*"
+      - "*auth login*"
+      - "*--client-secret*"
+      - "*--client-id*"
+  selection_powershell_graph:
+    CommandLine:
+      - "*Get-MgContext*"
+      - "*Connect-MgGraph*"
+      - "*Get-AzAccessToken*"
+      - "*-Scopes *Mail.Read*"
+      - "*-Scopes *Files.Read*"
+      - "*-Scopes *Directory.Read.All*"
+  filter_legitimate_admin:
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\NETWORK SERVICE
+  condition: (selection_cli_tools or selection_powershell_graph) and not filter_legitimate_admin
+falsepositives:
+  - Legitimate cloud administrators using Azure CLI or Microsoft Graph PowerShell for automation
+  - Managed Service Provider (MSP) scripts for tenant management
+  - DevOps CI/CD pipelines running on local runners
+level: high

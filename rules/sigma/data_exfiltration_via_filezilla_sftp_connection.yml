@@ -1,0 +1,66 @@
+title: Data Exfiltration via FileZilla SFTP Connection
+id: e8197550-58f4-4675-a723-c235814d86e0
+status: experimental
+description: Detects network connections initiated by the FileZilla FTP client to remote servers over SFTP (port 22) or FTP (port 21). This behavior is consistent with attackers using legitimate file transfer tools to exfiltrate stolen data to actor-controlled infrastructure.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.exfiltration
+  - attack.t1048.003
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_filezilla_process:
+    Image:
+      - "*\\filezilla.exe"
+    Initiated:
+      - true
+  selection_network_behavior:
+    DestinationPort:
+      - 21
+      - 22
+      - 990
+      - 14147
+    Protocol:
+      - tcp
+  selection_known_threat_ips:
+    DestinationIp:
+      - 45.155.204.5
+      - 5.255.102.167
+      - 45.61.139.206
+      - 193.149.129.131
+      - 5.255.105.55
+      - 162.33.178.40
+      - 91.215.85.183
+      - 20.69.178.82
+      - 152.89.196.49
+      - 185.29.9.162
+      - 174.138.188.6
+  filter_local_ranges:
+    DestinationIp:
+      - 10.*
+      - 192.168.*
+      - 172.16.*
+      - 172.17.*
+      - 172.18.*
+      - 172.19.*
+      - 172.20.*
+      - 172.21.*
+      - 172.22.*
+      - 172.23.*
+      - 172.24.*
+      - 172.25.*
+      - 172.26.*
+      - 172.27.*
+      - 172.28.*
+      - 172.29.*
+      - 172.30.*
+      - 172.31.*
+      - 127.*
+  condition: (selection_filezilla_process and selection_network_behavior and not filter_local_ranges) or selection_known_threat_ips
+falsepositives:
+  - Legitimate use of FileZilla by system administrators to manage remote web servers or backup repositories.
+  - Developers using SFTP to push code updates to external staging environments.
+level: high

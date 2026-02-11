@@ -1,0 +1,30 @@
+title: Potential MFA Fatigue Attack via Repeated Logon Failures
+id: 2677e05c-72ce-4d2e-bc77-5a37abdb8452
+status: experimental
+description: Detects potential MFA bombing or fatigue attacks where a high volume of logon failures or challenges occur for a single user account within a short period. This behavior is characteristic of attackers attempting to exhaust a user into approving a push notification.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.credential_access
+  - attack.t1621
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_mfa_events:
+    EventID:
+      - 4625
+      - 4648
+    Status:
+      - "0xC000006A"
+      - "0xC000006D"
+  filter_machine_accounts:
+    TargetUserName:
+      - "*$"
+  condition: selection_mfa_events and not filter_machine_accounts | count(EventID) by TargetUserName > 5
+falsepositives:
+  - Users who have forgotten their passwords and are repeatedly attempting to log in
+  - Misconfigured applications or service accounts with expired credentials
+  - Legacy applications that do not support modern authentication and trigger repeated prompts
+level: high

@@ -1,0 +1,39 @@
+title: Unauthorized Device Registration via Windows Security Events
+id: 9991dd14-2a7f-48d6-9f05-f8b3f4975efb
+status: experimental
+description: Detects potential unauthorized device registration activity by monitoring for specific service-related events and logon patterns associated with device enrollment. Attackers register unauthorized devices to bypass conditional access policies and maintain persistence within a tenant.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.persistence
+  - attack.t1098.005
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_device_registration:
+    EventID:
+      - 4768
+      - 4769
+    ServiceName:
+      - Microsoft Device Registration Service
+      - Device Registration Service
+      - Enterprise Registration Service
+  selection_privileged_accounts:
+    TargetUserName:
+      - admin*
+      - svc*
+      - "*-admin"
+      - "*-svc"
+  filter_local_system:
+    SubjectUserName:
+      - SYSTEM
+      - NETWORK SERVICE
+      - LOCAL SERVICE
+  condition: selection_device_registration and selection_privileged_accounts and not filter_local_system
+falsepositives:
+  - Legitimate hardware refreshes where administrators register new corporate devices
+  - Automated deployment of virtual desktops or containers using service accounts
+  - Initial setup of new administrative workstations
+level: high

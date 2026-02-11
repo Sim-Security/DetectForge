@@ -1,0 +1,16 @@
+[
+  {
+    "EventType": "SetValue",
+    "Image": "C:\\Windows\\System32\\svchost.exe",
+    "TargetObject": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\ConsentPromptBehaviorAdmin",
+    "Details": "DWORD (0x00000005)",
+    "User": "NT AUTHORITY\\SYSTEM"
+  },
+  {
+    "EventType": "SetValue",
+    "Image": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+    "TargetObject": "HKCU\\SOFTWARE\\Microsoft\\Office\\16.0\\Word\\Options\\DefaultDir",
+    "Details": "C:\\Users\\user1\\Documents",
+    "User": "CORP\\user1"
+  }
+]

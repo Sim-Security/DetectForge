@@ -1,0 +1,12 @@
+[
+  {
+    "PipeName": "\\MSSE-1234-server",
+    "Image": "C:\\Users\\Public\\beacon.exe",
+    "User": "CORP\\jdoe"
+  },
+  {
+    "PipeName": "\\postex_ssh_12345",
+    "Image": "C:\\Windows\\System32\\rundll32.exe",
+    "User": "CORP\\admin"
+  }
+]

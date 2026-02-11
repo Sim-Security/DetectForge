@@ -1,0 +1,49 @@
+title: Suspicious Network Connection by Python Dropper via Ingress Tool Transfer
+id: 1b153c2f-4fe5-49a3-934d-4033af8bd196
+status: experimental
+description: Detects network connections initiated by Python processes or scripts (like testSpeed.py or FinderTools) to suspicious external destinations. This behavior is consistent with multi-stage droppers used to fetch secondary payloads, often observed in campaigns like KANDYKORN where Python scripts download Mach-O binaries.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.command_and_control
+  - attack.t1105
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_python_process:
+    Image:
+      - "*\\python.exe"
+      - "*\\python3.exe"
+      - "*\\pythonw.exe"
+      - "*\\FinderTools"
+      - "*\\testSpeed.py"
+    Initiated:
+      - true
+  selection_suspicious_dest:
+    DestinationPort:
+      - 80
+      - 443
+      - 8080
+      - 8443
+    DestinationHostname:
+      - "*tp-globa.xyz"
+      - "*linkpc.net"
+      - "*bitscrunnch*"
+  filter_legitimate_python_traffic:
+    DestinationHostname:
+      - "*.pypi.org"
+      - "*.python.org"
+      - "*.github.com"
+      - "*.google.com"
+      - "*.microsoft.com"
+      - "*.amazonaws.com"
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\NETWORK SERVICE
+  condition: selection_python_process and selection_suspicious_dest and not filter_legitimate_python_traffic
+falsepositives:
+  - Legitimate Python-based update scripts or monitoring tools connecting to internal or well-known cloud repositories
+  - Developers using Python scripts to automate data retrieval from custom domains or non-standard web services
+level: high

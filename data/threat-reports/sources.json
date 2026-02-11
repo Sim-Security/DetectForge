@@ -1,202 +1,251 @@
 [
   {
-    "id": "cisa-advisories",
-    "name": "CISA Cybersecurity Advisories",
-    "url": "https://www.cisa.gov/news-events/cybersecurity-advisories",
-    "type": "advisory",
+    "id": "cisa-aa22-277a",
+    "title": "Impacket and Exfiltration Tool Used to Steal Sensitive Information",
+    "source": "CISA",
+    "url": "https://www.cisa.gov/news-events/cybersecurity-advisories/aa22-277a",
+    "date": "2022-10-04",
     "format": "html",
     "quality": "high",
-    "frequency": "weekly",
-    "notes": "Structured, consistent format. Excellent for ground truth. Co-authored with FBI, NSA, etc."
+    "tags": [
+      "apt",
+      "lateral-movement",
+      "credential-access",
+      "exfiltration"
+    ]
   },
   {
-    "id": "mandiant-blog",
-    "name": "Mandiant / Google Threat Intelligence Blog",
-    "url": "https://www.mandiant.com/resources/blog",
-    "type": "blog",
+    "id": "cisa-aa23-347a",
+    "title": "Russian FSB Cyber Actor Star Blizzard Continues Worldwide Spear-Phishing Campaigns",
+    "source": "CISA",
+    "url": "https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-347a",
+    "threatActor": "Star Blizzard / COLDRIVER",
+    "date": "2023-12-07",
     "format": "html",
     "quality": "high",
-    "frequency": "weekly",
-    "notes": "Detailed APT reports with IOCs and TTPs. Often includes MITRE ATT&CK mapping."
+    "tags": [
+      "apt",
+      "spear-phishing",
+      "credential-harvesting",
+      "russia"
+    ]
   },
   {
-    "id": "crowdstrike-blog",
-    "name": "CrowdStrike Blog - Threat Intelligence",
-    "url": "https://www.crowdstrike.com/blog/category/threat-intel-research/",
-    "type": "blog",
+    "id": "cisa-aa24-131a",
+    "title": "Black Basta Ransomware",
+    "source": "CISA",
+    "url": "https://www.cisa.gov/news-events/cybersecurity-advisories/aa24-131a",
+    "threatActor": "Black Basta",
+    "campaign": "Black Basta Ransomware",
+    "date": "2024-05-10",
     "format": "html",
     "quality": "high",
-    "frequency": "weekly",
-    "notes": "Named threat actor reports (FANCY BEAR, COZY BEAR, etc.). Good ATT&CK coverage."
+    "tags": [
+      "ransomware",
+      "initial-access",
+      "lateral-movement",
+      "exfiltration"
+    ]
   },
   {
-    "id": "unit42",
-    "name": "Unit 42 / Palo Alto Networks Research",
-    "url": "https://unit42.paloaltonetworks.com/",
-    "type": "blog",
+    "id": "microsoft-midnight-blizzard-2024",
+    "title": "Midnight Blizzard: Guidance for responders on nation-state attack",
+    "source": "Microsoft",
+    "url": "https://www.microsoft.com/en-us/security/blog/2024/01/25/midnight-blizzard-guidance-for-responders-on-nation-state-attack/",
+    "threatActor": "Midnight Blizzard / APT29 / Cozy Bear",
+    "campaign": "Microsoft Corporate Email Compromise",
+    "date": "2024-01-25",
     "format": "html",
     "quality": "high",
-    "frequency": "weekly",
-    "notes": "Technical deep-dives on campaigns and malware. Usually includes IOCs."
+    "tags": [
+      "apt29",
+      "nation-state",
+      "oauth-abuse",
+      "password-spray"
+    ]
   },
   {
-    "id": "microsoft-security-blog",
-    "name": "Microsoft Threat Intelligence Blog",
-    "url": "https://www.microsoft.com/en-us/security/blog/topic/threat-intelligence/",
-    "type": "blog",
+    "id": "mandiant-apt29-diplomatic-phishing",
+    "title": "APT29 Uses BMW Car Ad Phishing Lure to Target Diplomats",
+    "source": "Unit 42 / Palo Alto",
+    "url": "https://unit42.paloaltonetworks.com/cloaked-ursa-phishing/",
+    "threatActor": "APT29 / Cloaked Ursa",
+    "campaign": "Diplomatic Phishing 2023",
+    "date": "2023-07-13",
     "format": "html",
     "quality": "high",
-    "frequency": "weekly",
-    "notes": "Uses Blizzard/Tempest naming. Rich MITRE ATT&CK mapping."
+    "tags": [
+      "apt29",
+      "spear-phishing",
+      "html-smuggling",
+      "diplomats"
+    ]
   },
   {
-    "id": "dfir-report",
-    "name": "The DFIR Report",
-    "url": "https://thedfirreport.com/",
-    "type": "blog",
+    "id": "crowdstrike-scattered-spider",
+    "title": "Scattered Spider: A Closer Look at the Threat Actor",
+    "source": "CrowdStrike",
+    "url": "https://www.crowdstrike.com/blog/scattered-spider-attempt-to-avoid-detection/",
+    "threatActor": "Scattered Spider / UNC3944",
+    "date": "2023-01-11",
     "format": "html",
     "quality": "high",
-    "frequency": "monthly",
-    "notes": "Extremely detailed intrusion writeups with timelines, IOCs, TTPs, and command lines. Best for ground truth."
+    "tags": [
+      "scattered-spider",
+      "social-engineering",
+      "sim-swapping",
+      "identity"
+    ]
   },
   {
-    "id": "elastic-security-labs",
-    "name": "Elastic Security Labs",
-    "url": "https://www.elastic.co/security-labs",
-    "type": "blog",
+    "id": "elastic-ref-icedid-gziploader",
+    "title": "Elastic catches DPRK passing out KANDYKORN",
+    "source": "Elastic Security Labs",
+    "url": "https://www.elastic.co/security-labs/elastic-catches-dprk-passing-out-kandykorn",
+    "threatActor": "Lazarus Group / DPRK",
+    "campaign": "KANDYKORN",
+    "date": "2023-10-31",
     "format": "html",
     "quality": "high",
-    "frequency": "weekly",
-    "notes": "Malware analysis and detection rule content. Often includes Elastic detection rules."
+    "tags": [
+      "lazarus",
+      "dprk",
+      "crypto",
+      "supply-chain",
+      "macos"
+    ]
   },
   {
-    "id": "sentinelone-labs",
-    "name": "SentinelOne Labs",
-    "url": "https://www.sentinelone.com/labs/",
-    "type": "blog",
+    "id": "dfir-report-icedid-to-dagon-locker",
+    "title": "IcedID Brings ScreenConnect and CSharp Streamer to ALPHV Affiliate",
+    "source": "The DFIR Report",
+    "url": "https://thedfirreport.com/2024/04/01/from-onenote-to-ransomnote-an-ice-cold-intrusion/",
+    "campaign": "IcedID to Ransomware",
+    "date": "2024-04-01",
     "format": "html",
     "quality": "high",
-    "frequency": "weekly",
-    "notes": "Deep technical analysis of malware and threat actors."
+    "tags": [
+      "icedid",
+      "ransomware",
+      "cobalt-strike",
+      "lateral-movement"
+    ]
   },
   {
-    "id": "sophos-news",
-    "name": "Sophos News - Security Research",
-    "url": "https://news.sophos.com/en-us/category/threat-research/",
-    "type": "blog",
+    "id": "dfir-report-bumblebee-to-cobalt",
+    "title": "BumbleBee Zeros in on Meterpreter",
+    "source": "The DFIR Report",
+    "url": "https://thedfirreport.com/2022/08/08/bumblebee-roasts-its-way-to-domain-admin/",
+    "threatActor": "Bumblebee loader operators",
+    "campaign": "BumbleBee to Domain Admin",
+    "date": "2022-08-08",
+    "format": "html",
+    "quality": "high",
+    "tags": [
+      "bumblebee",
+      "cobalt-strike",
+      "domain-admin",
+      "kerberoasting"
+    ]
+  },
+  {
+    "id": "sophos-akira-ransomware",
+    "title": "Akira Ransomware is \"bringin 1988 back\"",
+    "source": "Sophos",
+    "url": "https://news.sophos.com/en-us/2023/05/09/akira-ransomware-is-bringin-1988-back/",
+    "threatActor": "Akira",
+    "campaign": "Akira Ransomware",
+    "date": "2023-05-09",
     "format": "html",
     "quality": "medium",
-    "frequency": "weekly",
-    "notes": "Ransomware and malware analysis. Good IOC coverage."
+    "tags": [
+      "akira",
+      "ransomware",
+      "vpn-exploitation",
+      "encryption"
+    ]
   },
   {
-    "id": "trendmicro-research",
-    "name": "Trend Micro Research",
-    "url": "https://www.trendmicro.com/en_us/research.html",
-    "type": "blog",
+    "id": "trendmicro-earth-lusca",
+    "title": "Earth Lusca Uses Geopolitical Lure to Target Taiwan",
+    "source": "Trend Micro",
+    "url": "https://www.trendmicro.com/en_us/research/23/h/earth-lusca-employs-new-linux-backdoor.html",
+    "threatActor": "Earth Lusca",
+    "date": "2023-08-09",
     "format": "html",
     "quality": "medium",
-    "frequency": "weekly",
-    "notes": "APT campaign tracking (Earth * naming). Good for Asian threat groups."
+    "tags": [
+      "earth-lusca",
+      "china",
+      "linux-backdoor",
+      "geopolitical"
+    ]
   },
   {
-    "id": "volexity-blog",
-    "name": "Volexity Blog",
-    "url": "https://www.volexity.com/blog/",
-    "type": "blog",
+    "id": "cisa-aa23-136a",
+    "title": "#StopRansomware: BianLian Ransomware Group",
+    "source": "CISA",
+    "url": "https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-136a",
+    "threatActor": "BianLian",
+    "campaign": "BianLian Ransomware",
+    "date": "2023-05-16",
     "format": "html",
     "quality": "high",
-    "frequency": "monthly",
-    "notes": "Excellent zero-day exploitation writeups. Detailed IOCs and forensic artifacts."
+    "tags": [
+      "bianlian",
+      "ransomware",
+      "rdp",
+      "extortion"
+    ]
   },
   {
-    "id": "recorded-future",
-    "name": "Recorded Future - Insikt Group",
-    "url": "https://www.recordedfuture.com/research",
-    "type": "blog",
+    "id": "volexity-ivanti-zero-day-2024",
+    "title": "Ivanti Connect Secure VPN Exploitation Goes Global",
+    "source": "Volexity",
+    "url": "https://www.volexity.com/blog/2024/01/10/active-exploitation-of-two-zero-day-vulnerabilities-in-ivanti-connect-secure-vpn/",
+    "campaign": "Ivanti VPN Zero-Day",
+    "date": "2024-01-10",
     "format": "html",
     "quality": "high",
-    "frequency": "weekly",
-    "notes": "Nation-state tracking and infrastructure analysis."
+    "tags": [
+      "zero-day",
+      "vpn",
+      "webshell",
+      "initial-access"
+    ]
   },
   {
-    "id": "proofpoint-blog",
-    "name": "Proofpoint Threat Research",
-    "url": "https://www.proofpoint.com/us/blog",
-    "type": "blog",
+    "id": "mandiant-apt28-outlook-ntlm",
+    "title": "APT28 Exploits Known Vulnerability To Carry Out Reconnaissance",
+    "source": "Microsoft",
+    "url": "https://www.microsoft.com/en-us/security/blog/2023/03/24/guidance-for-investigating-attacks-using-cve-2023-23397/",
+    "threatActor": "APT28 / Forest Blizzard",
+    "campaign": "Outlook NTLM Relay",
+    "date": "2023-03-24",
     "format": "html",
     "quality": "high",
-    "frequency": "weekly",
-    "notes": "Email-based threat campaigns (TA### naming). Good for phishing IOCs."
+    "tags": [
+      "apt28",
+      "cve-2023-23397",
+      "ntlm-relay",
+      "outlook"
+    ]
   },
   {
-    "id": "cisco-talos",
-    "name": "Cisco Talos Intelligence",
-    "url": "https://blog.talosintelligence.com/",
-    "type": "blog",
-    "format": "html",
-    "quality": "high",
-    "frequency": "weekly",
-    "notes": "Vulnerability research and malware analysis. Good network-level IOCs."
-  },
-  {
-    "id": "secureworks-ctu",
-    "name": "Secureworks Counter Threat Unit",
-    "url": "https://www.secureworks.com/research",
-    "type": "blog",
-    "format": "html",
-    "quality": "high",
-    "frequency": "monthly",
-    "notes": "Detailed threat group profiles (IRON/GOLD/BRONZE naming)."
-  },
-  {
-    "id": "checkpoint-research",
-    "name": "Check Point Research",
-    "url": "https://research.checkpoint.com/",
-    "type": "blog",
+    "id": "sentinelone-alphv-blackcat",
+    "title": "ALPHV BlackCat Ransomware Analysis",
+    "source": "SentinelOne",
+    "url": "https://www.sentinelone.com/labs/blackcat-ransomware/",
+    "threatActor": "ALPHV / BlackCat",
+    "campaign": "BlackCat Ransomware",
+    "date": "2022-02-04",
     "format": "html",
     "quality": "medium",
-    "frequency": "weekly",
-    "notes": "Malware analysis and campaign tracking."
-  },
-  {
-    "id": "nsa-advisories",
-    "name": "NSA Cybersecurity Advisories",
-    "url": "https://www.nsa.gov/Press-Room/Cybersecurity-Advisories-Guidance/",
-    "type": "advisory",
-    "format": "pdf",
-    "quality": "high",
-    "frequency": "monthly",
-    "notes": "Joint advisories with CISA. Excellent IOC lists and detection guidance."
-  },
-  {
-    "id": "malware-traffic-analysis",
-    "name": "Malware Traffic Analysis",
-    "url": "https://www.malware-traffic-analysis.net/",
-    "type": "pcap",
-    "format": "html",
-    "quality": "high",
-    "frequency": "daily",
-    "notes": "PCAP files with malicious traffic. Essential for Suricata rule testing."
-  },
-  {
-    "id": "any-run-trends",
-    "name": "ANY.RUN Malware Trends",
-    "url": "https://any.run/malware-trends/",
-    "type": "sandbox",
-    "format": "html",
-    "quality": "medium",
-    "frequency": "daily",
-    "notes": "Current malware sample analysis with behavioral indicators."
-  },
-  {
-    "id": "malpedia",
-    "name": "Malpedia - Fraunhofer FKIE",
-    "url": "https://malpedia.caad.fkie.fraunhofer.de/",
-    "type": "encyclopedia",
-    "format": "html",
-    "quality": "high",
-    "frequency": "ongoing",
-    "notes": "Curated malware family database with YARA rules. Reference for malware naming."
+    "tags": [
+      "alphv",
+      "blackcat",
+      "ransomware",
+      "rust-malware"
+    ]
   }
 ]

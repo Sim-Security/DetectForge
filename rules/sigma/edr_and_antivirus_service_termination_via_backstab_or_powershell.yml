@@ -1,0 +1,44 @@
+title: EDR and Antivirus Service Termination via Backstab or PowerShell
+id: 75f2dd53-6eb4-4e19-bb38-a2a9ef372bf1
+status: experimental
+description: Detects the termination or disabling of security services, often associated with tools like Backstab or malicious PowerShell scripts. Attackers use these methods to impair defenses and avoid detection during ransomware deployment.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.defense_evasion
+  - attack.t1562.001
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_service_stop:
+    EventID:
+      - 4697
+      - 4689
+    ServiceName:
+      - "*WinDefend*"
+      - "*MpsSvc*"
+      - "*Sense*"
+      - "*WdNisSvc*"
+      - "*Sentinel*"
+      - "*Cylance*"
+      - "*CarbonBlack*"
+      - "*CrowdStrike*"
+  selection_backstab_behavior:
+    ProcessName:
+      - "*backstab.exe*"
+      - "*terminator.exe*"
+  filter_legitimate_admin:
+    SubjectUserName:
+      - SYSTEM
+      - NETWORK SERVICE
+    ProcessName:
+      - C:\Windows\System32\services.exe
+      - C:\Windows\System32\msiexec.exe
+  condition: (selection_service_stop or selection_backstab_behavior) and not filter_legitimate_admin
+falsepositives:
+  - Legitimate security software updates that require service restarts or temporary termination
+  - Administrative troubleshooting by authorized IT personnel using scripts to reset security agents
+  - Uninstallation of security products by authorized administrators during system decommissioning
+level: high

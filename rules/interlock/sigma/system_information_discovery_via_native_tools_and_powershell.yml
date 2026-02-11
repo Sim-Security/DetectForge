@@ -1,0 +1,44 @@
+title: System Information Discovery via Native Tools and PowerShell
+id: 07f5ad97-38ad-4b81-85e7-2e319e16a494
+status: experimental
+description: Detects the execution of multiple system discovery commands such as systeminfo, tasklist, and arp, or specific PowerShell enumeration cmdlets like Get-PSDrive. These are frequently used by attackers during the reconnaissance phase to identify system configurations, running services, and network topology.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.discovery
+  - attack.t1082
+  - attack.t1057
+  - attack.t1018
+  - attack.t1135
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_native_tools:
+    Image:
+      - "*\\systeminfo.exe"
+      - "*\\tasklist.exe"
+      - "*\\arp.exe"
+    CommandLine:
+      - "* /svc*"
+      - "* -a*"
+  selection_powershell_recon:
+    CommandLine:
+      - "*Get-PSDrive*"
+      - "*WindowsIdentity.GetCurrent()*"
+      - "*Get-Service*"
+      - "*Get-NetIPConfiguration*"
+  filter_legitimate_admins:
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\NETWORK SERVICE
+    IntegrityLevel:
+      - System
+  condition: (selection_native_tools or selection_powershell_recon) and not filter_legitimate_admins
+falsepositives:
+  - System administration scripts for inventory management
+  - Help desk troubleshooting activities
+  - Security auditing tools or vulnerability scanners
+  - Software installers checking for system requirements
+level: medium

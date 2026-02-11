@@ -393,11 +393,16 @@ async function runGenerate(options: GenerateOptions): Promise<void> {
   const outputDir = resolveOutputDir(options.output);
 
   try {
+    // Derive a threat-actor subdirectory from report metadata or title.
+    // e.g. "Black Basta" → "black-basta", "SVR" → "svr"
+    const actorSlug = deriveActorSlug(report);
+    const baseDir = actorSlug ? join(outputDir, actorSlug) : outputDir;
+
     // Create subdirectories
-    const sigmaDir = join(outputDir, 'sigma');
-    const yaraDir = join(outputDir, 'yara');
-    const suricataDir = join(outputDir, 'suricata');
-    const reportsDir = join(outputDir, 'reports');
+    const sigmaDir = join(baseDir, 'sigma');
+    const yaraDir = join(baseDir, 'yara');
+    const suricataDir = join(baseDir, 'suricata');
+    const reportsDir = join(baseDir, 'reports');
 
     for (const dir of [sigmaDir, yaraDir, suricataDir, reportsDir]) {
       if (!existsSync(dir)) {
@@ -467,7 +472,7 @@ async function runGenerate(options: GenerateOptions): Promise<void> {
       'utf-8',
     );
 
-    outputSpinner.succeed(chalk.green(`Output written to ${outputDir}`));
+    outputSpinner.succeed(chalk.green(`Output written to ${baseDir}`));
 
     // --- Print Summary Table ---
     console.log('');
@@ -513,6 +518,56 @@ async function runGenerate(options: GenerateOptions): Promise<void> {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Derive a URL-safe slug for the threat actor / campaign from the report.
+ * Checks `metadata.threatActor` first, then falls back to extracting a
+ * recognisable actor name from the report title.  Returns `null` when no
+ * actor can be determined (output goes to a flat directory).
+ */
+function deriveActorSlug(
+  report: { title: string; metadata?: { threatActor?: string; campaign?: string } },
+): string | null {
+  // 1. Explicit metadata
+  const actor = report.metadata?.threatActor || report.metadata?.campaign;
+  if (actor && actor.trim().length > 0) {
+    return slugify(actor);
+  }
+
+  // 2. Heuristic: extract the first recognisable noun-phrase after
+  //    "StopRansomware:" or before a parenthesised advisory ID in the title.
+  //    e.g. "StopRansomware: Black Basta (CISA AA24-131A)" → "black-basta"
+  //    e.g. "SVR Cyber Actors Adapt Tactics …" → "svr"
+  const stopRansomMatch = report.title.match(/StopRansomware:\s*(.+?)(?:\s*\(|$)/i);
+  if (stopRansomMatch) {
+    return slugify(stopRansomMatch[1]);
+  }
+
+  // Grab leading noun(s) before common filler words
+  const leadMatch = report.title.match(/^([A-Z][A-Za-z0-9\-]+(?:\s+[A-Z][A-Za-z0-9\-]+)?)/);
+  if (leadMatch) {
+    const candidate = leadMatch[1].trim();
+    // Reject if it's just a generic word like "Advisory" or "Report"
+    if (!/^(advisory|report|alert|bulletin|notice)$/i.test(candidate)) {
+      return slugify(candidate);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Convert a human-readable name to a directory-safe slug.
+ * "Black Basta" → "black-basta", "SVR Cloud" → "svr-cloud"
+ */
+function slugify(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .substring(0, 60) || null!;
+}
 
 /**
  * Convert a string into a safe filename.

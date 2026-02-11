@@ -1,0 +1,40 @@
+title: Suspicious Network Connection Following Symlink Evaluation Modification
+id: c8160424-2860-47dc-b550-59a7eac0a5e8
+status: experimental
+description: Detects network connections initiated by processes commonly associated with the modification of symbolic link evaluation settings (R2L/R2R). Attackers, such as BlackCat ransomware operators, use fsutil to enable remote symlink evaluation to traverse and encrypt files across network shares. This rule monitors for outbound network activity from the fsutil utility or processes running from suspicious paths after such configurations are typically applied.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.exfiltration
+  - attack.t1537
+  - attack.lateral_movement
+  - attack.t1021.002
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_tools:
+    Image:
+      - "*\\fsutil.exe"
+    Initiated:
+      - true
+  selection_ports:
+    DestinationPort:
+      - 139
+      - 445
+      - 5985
+      - 5986
+    Protocol: tcp
+  filter_system_processes:
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\NETWORK SERVICE
+    DestinationHostname:
+      - "*.microsoft.com"
+      - "*.windowsupdate.com"
+  condition: selection_tools and selection_ports and not filter_system_processes
+falsepositives:
+  - Administrative activity where fsutil is used to troubleshoot filesystem issues or verify network share connectivity.
+  - Storage management software or backup agents that utilize fsutil for volume analysis and communicate over SMB/RPC.
+level: high

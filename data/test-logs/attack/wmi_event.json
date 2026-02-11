@@ -1,0 +1,11 @@
+[
+  {
+    "EventType": "WmiConsumerEvent",
+    "Operation": "Created",
+    "User": "CORP\\admin",
+    "EventNamespace": "root\\subscription",
+    "Name": "EvilConsumer",
+    "Destination": "powershell.exe -nop -w hidden -enc JABz",
+    "Consumer": "CommandLineEventConsumer"
+  }
+]

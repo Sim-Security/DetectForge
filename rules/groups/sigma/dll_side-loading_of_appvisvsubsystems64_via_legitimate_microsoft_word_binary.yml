@@ -1,0 +1,32 @@
+title: DLL Side-Loading of AppVIsvSubsystems64 via Legitimate Microsoft Word Binary
+id: 71491b59-826b-406b-acd4-3ada5afb1939
+status: experimental
+description: Detects the loading of a potentially malicious DLL named APPVISVSUBSYSTEMS64.dll by a process named windoc.exe (often a renamed or legitimate Microsoft Word binary). This pattern is indicative of DLL side-loading, where a signed executable is used to load an unsigned or malicious library from the same directory to bypass security controls.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.t1574.002
+logsource:
+  product: windows
+  category: image_load
+detection:
+  selection_binary:
+    Image:
+      - "*\\windoc.exe"
+  selection_dll:
+    ImageLoaded:
+      - "*\\AppVIsvSubsystems64.dll"
+  filter_legitimate_location:
+    Image:
+      - C:\Program Files\Microsoft Office\*
+      - C:\Program Files (x86)\Microsoft Office\*
+    Signed: true
+    SignatureStatus: Valid
+  condition: selection_binary and selection_dll and not filter_legitimate_location
+falsepositives:
+  - Legitimate Microsoft Office virtualization components running from standard installation paths
+  - Internal software development projects using similar naming conventions for testing App-V integration
+level: high

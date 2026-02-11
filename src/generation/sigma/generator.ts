@@ -63,7 +63,7 @@ export interface SigmaGenerationResult {
 
 const DEFAULT_OPTIONS: Required<SigmaGenerationOptions> = {
   modelTier: 'quality',
-  maxTokens: 2048,
+  maxTokens: 16384,
   temperature: 0.2,
   maxRetries: 3,
   author: 'DetectForge',

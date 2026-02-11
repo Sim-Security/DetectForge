@@ -1,0 +1,18 @@
+[
+  {
+    "Image": "C:\\Windows\\System32\\rundll32.exe",
+    "ImageLoaded": "C:\\Users\\Public\\malicious.dll",
+    "OriginalFileName": "malicious.dll",
+    "Signed": false,
+    "SignatureStatus": "Unsigned",
+    "User": "CORP\\jdoe"
+  },
+  {
+    "Image": "C:\\Windows\\System32\\svchost.exe",
+    "ImageLoaded": "C:\\Windows\\Temp\\procdump.dll",
+    "OriginalFileName": "procdump.dll",
+    "Signed": false,
+    "SignatureStatus": "Unsigned",
+    "User": "NT AUTHORITY\\SYSTEM"
+  }
+]

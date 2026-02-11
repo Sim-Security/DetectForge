@@ -1,0 +1,32 @@
+[
+  {
+    "EventID": 4625,
+    "SubjectUserName": "-",
+    "TargetUserName": "admin",
+    "TargetDomainName": "CORP",
+    "LogonType": 10,
+    "IpAddress": "198.51.100.42",
+    "IpPort": "49152",
+    "Status": "0xc000006d"
+  },
+  {
+    "EventID": 4625,
+    "SubjectUserName": "-",
+    "TargetUserName": "svc_backup",
+    "TargetDomainName": "CORP",
+    "LogonType": 3,
+    "IpAddress": "198.51.100.42",
+    "IpPort": "49153",
+    "Status": "0xc000006d"
+  },
+  {
+    "EventID": 4720,
+    "SubjectUserName": "compromised_admin",
+    "TargetUserName": "backdoor_user",
+    "TargetDomainName": "CORP",
+    "LogonType": 0,
+    "IpAddress": "-",
+    "IpPort": "-",
+    "Status": "0x0"
+  }
+]

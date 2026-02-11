@@ -1,0 +1,55 @@
+title: Suspicious Network Connection to Cloud APIs via Non-Browser Process
+id: 3214374f-db2c-4f8b-a760-408e5d24b974
+status: experimental
+description: Detects network connections to legitimate cloud service APIs (Microsoft Graph, Dropbox) initiated by suspicious or unusual processes. Attackers use these services for bidirectional Command and Control (C2) to blend in with legitimate enterprise traffic, often exfiltrating data or receiving commands via obfuscated file formats.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.command_and_control
+  - attack.t1102.002
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_cloud_api:
+    DestinationHostname:
+      - graph.microsoft.com
+      - api.dropboxapi.com
+      - content.dropboxapi.com
+    Initiated:
+      - true
+    DestinationPort:
+      - 443
+  selection_suspicious_processes:
+    Image:
+      - "*\\cmd.exe"
+      - "*\\powershell.exe"
+      - "*\\pwsh.exe"
+      - "*\\wscript.exe"
+      - "*\\cscript.exe"
+      - "*\\mshta.exe"
+      - "*\\rundll32.exe"
+      - "*\\regsvr32.exe"
+      - "*\\certutil.exe"
+      - "*\\bitsadmin.exe"
+      - "*\\vbc.exe"
+      - "*\\csc.exe"
+      - "*\\scrcons.exe"
+  filter_legitimate_apps:
+    Image:
+      - "*\\chrome.exe"
+      - "*\\msedge.exe"
+      - "*\\firefox.exe"
+      - "*\\brave.exe"
+      - "*\\iexplore.exe"
+      - "*\\Dropbox.exe"
+      - "*\\OneDrive.exe"
+      - "*\\Teams.exe"
+      - "*\\Outlook.exe"
+  condition: selection_cloud_api and selection_suspicious_processes and not filter_legitimate_apps
+falsepositives:
+  - Administrative PowerShell scripts using Microsoft Graph SDK for automation or reporting
+  - Legitimate use of BITS or CertUtil by system administrators to download files from trusted cloud storage
+  - Custom line-of-business applications compiled with vbc.exe or csc.exe that integrate with Dropbox or Office 365
+level: high

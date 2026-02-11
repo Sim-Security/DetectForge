@@ -1,0 +1,16 @@
+[
+  {
+    "ScriptBlockText": "Get-Process | Where-Object { $_.CPU -gt 100 } | Select-Object Name, CPU",
+    "ScriptBlockId": "{aaaaaaaa-1111-1111-1111-111111111111}",
+    "Path": "C:\\Scripts\\monitor.ps1",
+    "MessageNumber": 1,
+    "MessageTotal": 1
+  },
+  {
+    "ScriptBlockText": "Install-Module -Name Az -Scope CurrentUser -Force",
+    "ScriptBlockId": "{bbbbbbbb-2222-2222-2222-222222222222}",
+    "Path": "",
+    "MessageNumber": 1,
+    "MessageTotal": 1
+  }
+]

@@ -1,0 +1,24 @@
+[
+  {
+    "Image": "C:\\Users\\Public\\svchost.exe",
+    "User": "CORP\\jdoe",
+    "Protocol": "tcp",
+    "Initiated": true,
+    "SourceIp": "10.0.1.50",
+    "SourcePort": 49152,
+    "DestinationIp": "198.51.100.42",
+    "DestinationHostname": "",
+    "DestinationPort": 4444
+  },
+  {
+    "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "User": "CORP\\jdoe",
+    "Protocol": "tcp",
+    "Initiated": true,
+    "SourceIp": "10.0.1.50",
+    "SourcePort": 49200,
+    "DestinationIp": "203.0.113.10",
+    "DestinationHostname": "evil.example.com",
+    "DestinationPort": 443
+  }
+]

@@ -1,0 +1,54 @@
+title: Potential Defense Evasion via Log Clearing or Service Tampering
+id: 77b00240-d8f1-4671-bf14-80beb8bfec6a
+status: experimental
+description: Detects attempts to clear security logs or tamper with services, which aligns with observed attacker behavior on Ivanti appliances where system logging was disabled and logs were wiped to hide webshell activity and integrity checker modifications.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.defense_evasion
+  - attack.t1562.001
+  - attack.t1070.001
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_log_cleared:
+    EventID:
+      - 1102
+      - 4719
+  selection_service_tamper:
+    EventID:
+      - 4697
+      - 4699
+    ServiceName:
+      - "*EventLog*"
+      - "*Syslog*"
+      - "*Integrity*"
+  selection_suspicious_ips:
+    IpAddress:
+      - 206.189.208.156
+      - 75.145.243.85
+      - 47.207.9.89
+      - 98.160.48.170
+      - 173.220.106.166
+      - 73.128.178.221
+      - 50.243.177.161
+      - 50.213.208.89
+      - 64.24.179.210
+      - 75.145.224.109
+      - 50.215.39.49
+      - 71.127.149.194
+      - 173.53.43.7
+  filter_legitimate_admins:
+    SubjectUserName:
+      - MSOL_*
+      - HealthService
+      - SYSTEM
+    SubjectDomainName:
+      - NT AUTHORITY
+  condition: (selection_log_cleared or (selection_service_tamper and selection_suspicious_ips)) and not filter_legitimate_admins
+falsepositives:
+  - Legitimate log rotation or maintenance scripts executed by domain administrators during scheduled windows.
+  - Automated security auditing tools or vulnerability scanners that temporarily modify service states for compliance testing.
+level: high

@@ -58,7 +58,7 @@ export async function mapToAttack(
 ): Promise<AttackMappingOutput> {
   const {
     modelTier = 'standard',
-    maxTokens = 4096,
+    maxTokens = 16384,
     temperature = 0.1,
     maxRetries = 3,
     validateTechniqueId,
@@ -88,17 +88,25 @@ export async function mapToAttack(
 
   const { system, user } = buildAttackMappingPrompt(ttpSummaries);
 
-  const result = await withRetry(
-    () => client.prompt(system, user, {
-      model: modelTier,
-      maxTokens,
-      temperature,
-      jsonMode: true,
-    }),
-    { maxRetries },
+  // Wrap both API call and parsing in retry so malformed JSON triggers a retry
+  const { parsed, usage: totalUsage } = await withRetry(
+    async () => {
+      const result = await client.prompt(system, user, {
+        model: modelTier,
+        maxTokens,
+        temperature,
+        jsonMode: true,
+      });
+      return { parsed: parseAttackMappingResponse(result.content), usage: result.usage };
+    },
+    {
+      maxRetries,
+      isRetryable: (err) => {
+        if (err instanceof Error && err.message.includes('validation failed')) return true;
+        return undefined;
+      },
+    },
   );
-
-  const parsed = parseAttackMappingResponse(result.content);
 
   // Map parsed response to AttackMappingResult, linking back to source TTPs
   const mappings: AttackMappingResult[] = parsed.mappings.map((mapping, index) => {
@@ -135,6 +143,6 @@ export async function mapToAttack(
 
   return {
     mappings: [...deduped.values()],
-    totalUsage: result.usage,
+    totalUsage,
   };
 }

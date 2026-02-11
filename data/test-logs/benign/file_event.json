@@ -1,0 +1,14 @@
+[
+  {
+    "Image": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "TargetFilename": "C:\\Users\\user1\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache\\entry.dat",
+    "CreationUtcTime": "2026-02-10 10:00:00.000",
+    "User": "CORP\\user1"
+  },
+  {
+    "Image": "C:\\Windows\\System32\\svchost.exe",
+    "TargetFilename": "C:\\Windows\\Temp\\cab_12345_6",
+    "CreationUtcTime": "2026-02-10 08:30:00.000",
+    "User": "NT AUTHORITY\\SYSTEM"
+  }
+]

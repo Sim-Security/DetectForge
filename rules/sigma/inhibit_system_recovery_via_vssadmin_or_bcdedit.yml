@@ -1,0 +1,36 @@
+title: Inhibit System Recovery via Vssadmin or Bcdedit
+id: 9c6204d0-7392-42b7-8b93-4843e0227253
+status: experimental
+description: Detects the deletion of volume shadow copies and the disabling of Windows recovery options. This behavior is frequently used by ransomware, such as BlackCat, to prevent victims from restoring data from backups or system recovery points.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.impact
+  - attack.t1490
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_vssadmin:
+    CommandLine:
+      - "*vssadmin* delete shadows*"
+      - "*wmic* shadowcopy delete*"
+  selection_recovery:
+    CommandLine:
+      - "*bcdedit* /set *recoveryenabled* no*"
+      - "*bcdedit* /set *bootstatuspolicy* ignoreallfailures*"
+  filter_legitimate_admins:
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\NETWORK SERVICE
+    ParentImage:
+      - "*\\CcmExec.exe"
+      - "*\\msiexec.exe"
+      - "*\\VeeamGuestHelper.exe"
+  condition: (selection_vssadmin or selection_recovery) and not filter_legitimate_admins
+falsepositives:
+  - Legitimate backup software (e.g., Veeam, Veritas) performing maintenance or cleanup of shadow copies.
+  - System administrators manually troubleshooting boot issues or performing system upgrades that require disabling recovery features.
+  - Automated software deployment tools or installers that modify boot configuration as part of a legitimate update process.
+level: high

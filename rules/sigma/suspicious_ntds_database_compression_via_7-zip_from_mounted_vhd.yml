@@ -1,0 +1,45 @@
+title: Suspicious NTDS Database Compression via 7-Zip from Mounted VHD
+id: 95fa95ae-8c80-49b6-bf6d-ab4b53fcfa13
+status: experimental
+description: Detects the compression of Active Directory database files (ntds.dit) using 7-Zip or similar archiving tools, particularly when sourced from mounted Virtual Hard Disk (VHD/VHDX) backups. This technique is associated with credential dumping from domain controller backup images where attackers mount VHD files to extract and compress the NTDS database for exfiltration.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.credential_access
+  - attack.t1003.003
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_archiver:
+    Image:
+      - "*\\7z.exe"
+      - "*\\7za.exe"
+      - "*\\7zG.exe"
+      - "*\\winrar.exe"
+    CommandLine:
+      - "*ntds.dit*"
+  selection_mount:
+    Image:
+      - "*\\diskpart.exe"
+      - "*\\dism.exe"
+      - "*\\powershell.exe"
+      - "*\\pwsh.exe"
+    CommandLine:
+      - "*.vhd*"
+      - "*.vhdx*"
+      - "*Mount-DiskImage*"
+  filter_system_process:
+    ParentImage:
+      - "*\\svchost.exe"
+      - "*\\services.exe"
+  filter_backup_engine:
+    ParentImage:
+      - "*\\wbengine.exe"
+      - "*\\vssvc.exe"
+  condition: (selection_archiver or selection_mount) and not filter_system_process and not filter_backup_engine
+falsepositives:
+  - Legitimate disaster recovery operations where administrators mount VHD backups to extract specific files including Active Directory databases for testing purposes
+  - Backup software agents that temporarily mount virtual disk images to perform file-level recovery operations
+level: high

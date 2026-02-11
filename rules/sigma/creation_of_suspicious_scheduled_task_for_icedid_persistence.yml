@@ -1,0 +1,37 @@
+title: Creation of Suspicious Scheduled Task for IcedID Persistence
+id: 53fbf5e1-a24c-4535-a3e5-1af17cb3bad9
+status: experimental
+description: Detects the creation of a scheduled task that executes rundll32.exe from the AppData directory, often used by IcedID to maintain persistence and load its first-stage DLL. The rule monitors for specific command-line patterns like custom flags and DLL execution from user-writable paths.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.persistence
+  - attack.t1053.005
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_task_creation:
+    EventID:
+      - 4698
+      - 4702
+  selection_icedid_behavior:
+    ProcessName:
+      - "*\\rundll32.exe"
+    ServiceName:
+      - "*AppData\\Roaming*"
+      - "*--od=*"
+      - "*Cadiak.dll*"
+  filter_legitimate_admin:
+    SubjectUserName:
+      - SYSTEM
+      - NETWORK SERVICE
+      - LOCAL SERVICE
+    SubjectDomainName:
+      - NT AUTHORITY
+  condition: selection_task_creation and selection_icedid_behavior and not filter_legitimate_admin
+falsepositives:
+  - Legitimate software updates that use scheduled tasks to run DLLs from user-specific application data folders.
+  - Administrative scripts or deployment tools that create tasks for per-user application configurations.
+level: high

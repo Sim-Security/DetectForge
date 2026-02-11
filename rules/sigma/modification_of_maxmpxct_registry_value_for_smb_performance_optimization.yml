@@ -1,0 +1,30 @@
+title: Modification of MaxMpxCt Registry Value for SMB Performance Optimization
+id: e5a7ecd3-75f9-439c-9b96-d7a6575a293f
+status: experimental
+description: Detects the modification of the MaxMpxCt registry value within the LanmanServer parameters. Threat actors, particularly ransomware operators, increase this value to allow a higher number of simultaneous outstanding requests (up to 65535), which facilitates faster encryption of files over SMB network shares.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.defense_evasion
+  - attack.t1112
+logsource:
+  product: windows
+  category: registry_set
+detection:
+  selection_registry_path:
+    TargetObject:
+      - "*\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters\\MaxMpxCt"
+  selection_details:
+    Details:
+      - DWORD (0x0000ffff)
+      - "*65535*"
+  filter_legitimate_images:
+    Image:
+      - C:\Windows\System32\svchost.exe
+      - C:\Windows\System32\services.exe
+  condition: selection_registry_path and selection_details and not filter_legitimate_images
+falsepositives:
+  - High-performance file servers or database servers where administrators have manually tuned SMB performance parameters.
+  - Legacy applications or specialized network storage software that requires high multiplexed command counts for stability.
+level: high

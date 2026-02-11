@@ -1,0 +1,62 @@
+title: Suspicious Data Staging in Web Directories via File Operations
+id: ae6a46b6-bafa-45ce-b69e-4aefa378a235
+status: experimental
+description: Detects execution of file copy, move, or write operations targeting web-accessible directories (such as IIS inetpub, wwwroot, or VPN-related paths like dana-na/help), which may indicate adversaries staging collected data locally prior to exfiltration per ATT&CK T1074.001. This behavior is commonly observed when attackers prepare data for exfiltration by placing it in directories accessible to web servers or applications.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.collection
+  - attack.t1074.001
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_tools:
+    Image:
+      - "*\\cmd.exe"
+      - "*\\powershell.exe"
+      - "*\\pwsh.exe"
+      - "*\\xcopy.exe"
+      - "*\\robocopy.exe"
+      - "*\\certutil.exe"
+      - "*\\bitsadmin.exe"
+  selection_web_paths:
+    CommandLine:
+      - "*inetpub*"
+      - "*wwwroot*"
+      - "*dana-na*"
+      - "*\\help\\*"
+      - "*webroot*"
+      - "*htdocs*"
+      - "*public_html*"
+  selection_file_ops:
+    CommandLine:
+      - "* copy *"
+      - "* xcopy *"
+      - "* robocopy *"
+      - "* move *"
+      - "*>*"
+      - "*Out-File*"
+      - "*Set-Content*"
+      - "*Add-Content*"
+      - "*DownloadFile*"
+      - "*DownloadString*"
+  filter_legitimate_web:
+    ParentImage:
+      - "*\\w3wp.exe"
+      - "*\\iisexpress.exe"
+      - "*\\httpd.exe"
+      - "*\\nginx.exe"
+  filter_legitimate_system:
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\LOCAL SERVICE
+    ParentImage:
+      - "*\\services.exe"
+      - "*\\svchost.exe"
+  condition: selection_tools and selection_web_paths and selection_file_ops and not filter_legitimate_web and not filter_legitimate_system
+falsepositives:
+  - Legitimate administrative scripts or deployment tools (e.g., SCCM, Puppet, Ansible) that update web content in inetpub or wwwroot directories during scheduled maintenance windows
+  - Developers manually copying files to local web server directories for testing purposes using command line tools
+level: high

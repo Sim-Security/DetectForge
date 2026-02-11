@@ -1,0 +1,47 @@
+title: Discord Execution Flow Hijacking via Malicious Image Load
+id: e724aea3-a871-4ad5-b4e5-eb4638d2b4f6
+status: experimental
+description: Detects the loading of suspicious or unsigned modules by a process masquerading as Discord, or Discord loading unusual hidden files. This behavior is consistent with HLOADER and KANDYKORN malware which renames the legitimate Discord binary to a hidden file like '.lock' and replaces it with a malicious loader.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.persistence
+  - attack.t1574.006
+logsource:
+  product: windows
+  category: image_load
+detection:
+  selection_discord_process:
+    Image:
+      - "*\\Discord.exe"
+      - "*\\Discord.app\\*"
+  selection_suspicious_load:
+    ImageLoaded:
+      - "*\\.lock"
+      - "*\\.log"
+      - "*\\.sld"
+      - "*\\MacOS.tmp"
+      - "*\\temp.dat"
+  selection_unsigned_loader:
+    Image:
+      - "*\\Discord.exe"
+      - "*\\Discord.app\\*"
+    Signed:
+      - "false"
+    SignatureStatus:
+      - Unavailable
+      - Invalid
+  filter_legitimate_discord:
+    Company:
+      - Discord Inc.
+    Signed:
+      - "true"
+    SignatureStatus:
+      - Valid
+  condition: (selection_discord_process and selection_suspicious_load) or (selection_unsigned_loader and not filter_legitimate_discord)
+falsepositives:
+  - Legitimate Discord updates where the temporary installer has not yet been fully verified by the OS
+  - Security software or monitoring tools injecting modules into the Discord process space
+  - Developer environments where Discord components are being modified or debugged locally
+level: high

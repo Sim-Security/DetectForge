@@ -1,0 +1,40 @@
+title: Exchange Application Impersonation Role Assignment via Management Role
+id: a515dd85-807b-4b4f-abd1-86bfcd6e6c9d
+status: experimental
+description: Detects the assignment of the 'ApplicationImpersonation' management role to a user or service account. Threat actors abuse this role to gain full access to all mailboxes within an Exchange environment, allowing for data exfiltration and persistence without knowing individual user credentials.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.persistence
+  - attack.t1098.002
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_event:
+    EventID:
+      - 4688
+      - 5136
+      - 4624
+  selection_role_assignment:
+    ProcessName:
+      - "*\\powershell.exe"
+      - "*\\pwsh.exe"
+    ServiceName:
+      - "*ApplicationImpersonation*"
+      - "*New-ManagementRoleAssignment*"
+  filter_admin_defaults:
+    SubjectUserName:
+      - EXCHANGE-ADMIN*
+      - MSOL_*
+      - ADSync*
+    TargetUserName:
+      - Discovery Management
+      - Organization Management
+  condition: selection_event and selection_role_assignment and not filter_admin_defaults
+falsepositives:
+  - Legitimate migration tools (e.g., Bittitan, SkyKick) that require ApplicationImpersonation to move mailbox data.
+  - Internal service accounts for legitimate backup software or unified messaging solutions.
+  - Authorized administrative actions during initial Exchange environment setup or major configuration changes.
+level: high

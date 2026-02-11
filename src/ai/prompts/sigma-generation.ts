@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { extractJsonFromResponse } from '@/ai/response-parser.js';
 import type { SigmaTemplate } from '@/generation/sigma/templates.js';
 import type { ExtractedTTP, AttackMappingResult, ExtractedIOC } from '@/types/extraction.js';
+import type { SigmaReferenceRule } from '@/knowledge/sigma-reference/loader.js';
 
 // ---------------------------------------------------------------------------
 // Zod Schema for the AI response
@@ -104,8 +105,9 @@ export function buildSigmaGenerationPrompt(
   mapping: AttackMappingResult,
   template: SigmaTemplate,
   iocs: ExtractedIOC[],
+  referenceRules?: SigmaReferenceRule[],
 ): { system: string; user: string } {
-  const system = buildSystemPrompt(template);
+  const system = buildSystemPrompt(template, referenceRules);
   const user = buildUserPrompt(ttp, mapping, template, iocs);
   return { system, user };
 }
@@ -117,12 +119,16 @@ export function buildSigmaGenerationPrompt(
 /**
  * Build the system prompt with Sigma specification context.
  */
-function buildSystemPrompt(template: SigmaTemplate): string {
+function buildSystemPrompt(
+  template: SigmaTemplate,
+  referenceRules?: SigmaReferenceRule[],
+): string {
   const logsourceYaml = formatLogsourceBlock(template.logsource);
   const fieldsBlock = template.availableFields
     .map((f) => `  - ${f}`)
     .join('\n');
   const exampleDetectionJson = JSON.stringify(template.exampleDetection, null, 2);
+  const referenceBlock = buildReferenceBlock(referenceRules);
 
   return `You are an expert detection engineer specializing in Sigma rule creation.
 Your task is to generate a single, high-quality Sigma detection rule in JSON format.
@@ -138,7 +144,7 @@ A valid Sigma rule requires the following fields:
   - Sub-technique: \`attack.tNNNN.NNN\` (e.g. \`attack.t1059.001\`)
 - **logsource**: The log source this rule applies to (product, category, service).
 - **detection**: One or more named selection/filter blocks plus a \`condition\` string that references them.
-- **falsepositives**: Array of known false-positive scenarios.
+- **falsepositives**: Array of known false-positive scenarios (MINIMUM 2 entries).
 - **level**: One of: informational, low, medium, high, critical.
 
 ## Detection Block Rules
@@ -149,8 +155,11 @@ A valid Sigma rule requires the following fields:
 - The \`condition\` field is a boolean expression referencing selection names: \`selection and not filter_legitimate\`
 - Prefer specific field values over overly broad wildcards.
 - Combine multiple selections with \`and\`/\`or\`/\`not\` in the condition.
+- Aggregation syntax is supported: \`selection | count(FieldName) by GroupField > N\`
+- **CRITICAL**: The condition MUST ONLY use these operators: \`and\`, \`or\`, \`not\`, \`|\`, \`count()\`, \`by\`, \`near\`, \`>\`, \`<\`, \`>=\`, \`<=\`, \`==\`, and references to detection block key names. NEVER use natural language words like "followed by", "then", "before", "after", "within" in the condition — these are NOT valid Sigma syntax.
+- If you need to express temporal correlation (e.g. failures followed by success), use a combined condition like \`(selection_failures or selection_success) and not filter\` — do NOT try to express ordering.
 
-## Target Logsource
+## STRICT Field Constraints
 
 Your rule MUST use this logsource:
 \`\`\`yaml
@@ -158,11 +167,30 @@ logsource:
 ${logsourceYaml}
 \`\`\`
 
-## Available Fields for This Logsource
+**ONLY use these fields in your detection blocks** — do NOT invent or use ANY fields not in this list:
 
 ${fieldsBlock}
 
-Only use fields from the list above. Do not invent fields that do not exist in this logsource.
+This is a HARD CONSTRAINT. Using fields outside this list will cause the rule to fail validation. For example, do NOT use \`EventID\` in a process_creation logsource — it does not exist there. Do NOT use \`IpAddress\` in a process_creation logsource.
+
+## Detection Quality Requirements
+
+### 1. MANDATORY: Include Filter/Exclusion Block
+Every rule MUST include at least one \`filter_*\` or \`exclusion_*\` block to reduce false positives. The condition MUST use \`not\` to exclude legitimate activity. Rules without filters are rejected.
+
+Good: \`"condition": "selection and not filter_legitimate"\`
+Bad: \`"condition": "selection"\` (no filter = too many false positives)
+
+### 2. MANDATORY: Behavioral Detection Over Static IOCs
+Prefer behavioral patterns (command-line arguments, process relationships, registry paths, API calls) over static IOC matching (specific IP addresses, domains, hashes). IOCs change constantly; behaviors persist across campaigns.
+
+- Good: Detecting \`powershell.exe -encodedcommand *\` (behavioral pattern)
+- Bad: Detecting connections to \`198.51.100.42\` (static IOC that changes)
+
+IOCs may be used to ENRICH behavioral detections (e.g. as additional selection criteria) but should NOT be the sole detection logic.
+
+### 3. MANDATORY: Multiple Selection Blocks
+Use at least 2 named selection blocks to create layered detection logic. Single-selection rules are too broad.
 
 ## Example Detection Block
 
@@ -189,16 +217,20 @@ ${exampleDetectionJson}
       "Image": ["*\\\\powershell.exe", "*\\\\pwsh.exe"],
       "CommandLine": ["*Invoke-WebRequest*", "*iwr *", "*wget *", "*Net.WebClient*", "*DownloadString*", "*DownloadFile*"]
     },
-    "condition": "selection_parent and selection_ps"
+    "filter_legitimate": {
+      "ParentImage": ["*\\\\svchost.exe", "*\\\\services.exe"],
+      "User": ["NT AUTHORITY\\\\SYSTEM", "NT AUTHORITY\\\\LOCAL SERVICE"]
+    },
+    "condition": "selection_parent and selection_ps and not filter_legitimate"
   },
   "falsepositives": [
-    "Administrative scripts that download updates or configuration files",
-    "Developer toolchains that fetch packages"
+    "Administrative scripts that download updates or configuration files via PowerShell from internal repositories",
+    "Developer toolchains that fetch packages using Invoke-WebRequest in CI/CD pipelines"
   ],
   "level": "high"
 }
 \`\`\`
-
+${referenceBlock}
 ## Output Format
 
 Respond with ONLY a JSON object (no markdown fences, no explanation) matching the structure above.
@@ -278,14 +310,15 @@ ${fieldsBlock}
 
 ## Requirements
 
-1. The rule MUST detect the specific behavior described above, not generic activity.
-2. Include at least one selection block with concrete field values derived from the TTP details.
-3. Where possible, incorporate relevant IOCs (file paths, process names, command-line patterns, domains, IPs) into the detection logic.
-4. Add a filter block to reduce false positives if appropriate.
-5. Use the \`condition\` field to combine selections and filters logically.
+1. The rule MUST detect the specific **behavior** described above, not generic activity. Focus on command-line patterns, process relationships, registry modifications, and API calls — NOT static IOCs like IP addresses or domains.
+2. Include at least **2 named selection blocks** with concrete field values derived from the TTP details.
+3. **MANDATORY**: Include at least one \`filter_*\` or \`exclusion_*\` block to exclude legitimate activity. The condition MUST use \`not\` to reference it.
+4. **ONLY use fields from the Available Fields list above.** Using any other field will cause the rule to FAIL validation.
+5. Use the \`condition\` field to combine selections and filters logically (e.g. \`selection_process and selection_args and not filter_legitimate\`).
 6. Set the \`level\` based on the threat severity and detection confidence.
-7. Write actionable \`falsepositives\` entries that help analysts tune the rule.
+7. Write at least **2 actionable \`falsepositives\` entries** that help analysts tune the rule.
 8. The \`tags\` array MUST include the tactic as \`attack.<tactic>\` and the technique as \`attack.t<id>\` (lowercase).
+9. IOCs may ENRICH behavioral selections (e.g. known tool names in CommandLine) but must NOT be the sole detection logic.
 
 Respond with ONLY the JSON object.`;
 }
@@ -305,6 +338,46 @@ function formatLogsourceBlock(
     lines.push(`  service: ${logsource.service}`);
   }
   return lines.join('\n');
+}
+
+/**
+ * Build a reference block from SigmaHQ rules for the same ATT&CK technique.
+ * Gives the model concrete examples of production-quality detection logic.
+ */
+function buildReferenceBlock(referenceRules?: SigmaReferenceRule[]): string {
+  if (!referenceRules || referenceRules.length === 0) return '\n';
+
+  // Take at most 2 reference rules to keep prompt concise
+  const selected = referenceRules.slice(0, 2);
+  const rulesText = selected
+    .map((r, i) => {
+      const detectionYaml = Object.entries(r.detection)
+        .map(([key, value]) => {
+          if (typeof value === 'string') return `    ${key}: ${value}`;
+          return `    ${key}: ${JSON.stringify(value)}`;
+        })
+        .join('\n');
+
+      return `### Reference ${i + 1}: ${r.title}
+- **Level**: ${r.level}
+- **Logsource**: product=${r.logsource.product ?? 'N/A'}, category=${r.logsource.category ?? 'N/A'}
+\`\`\`
+detection:
+${detectionYaml}
+\`\`\``;
+    })
+    .join('\n\n');
+
+  return `
+## SigmaHQ Reference Rules (same ATT&CK technique)
+
+Study these production SigmaHQ rules for the same technique. Note the field choices, filter patterns, and condition structure:
+
+${rulesText}
+
+Use these as inspiration for detection patterns, but adapt them to the specific TTP described in the user prompt.
+
+`;
 }
 
 /**

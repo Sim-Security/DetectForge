@@ -1,0 +1,46 @@
+title: Suspicious Exchange Web Services Mailbox Access via PowerShell
+id: 57ea5708-d3bb-471e-ac0b-9e09c8afc850
+status: experimental
+description: Detects the use of PowerShell to interact with Exchange Web Services (EWS) for programmatic mailbox access. This behavior is consistent with attackers using OAuth applications with 'full_access_as_app' or 'ApplicationImpersonation' permissions to exfiltrate email data, as seen in Midnight Blizzard campaigns.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.collection
+  - attack.t1114.002
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_img:
+    Image:
+      - "*\\powershell.exe"
+      - "*\\pwsh.exe"
+      - "*\\pwsh.dll"
+  selection_ews_cli:
+    CommandLine:
+      - "*Microsoft.Exchange.WebServices.Data*"
+      - "*.ExchangeService*"
+      - "*AutodiscoverUrl*"
+      - "*BindToItems*"
+      - "*FindItems*"
+      - "*full_access_as_app*"
+      - "*ApplicationImpersonation*"
+  filter_legitimate_admin:
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\NETWORK SERVICE
+    ParentImage:
+      - "*\\services.exe"
+      - "*\\msiexec.exe"
+  filter_exchange_install:
+    CommandLine:
+      - "*\\Microsoft\\Exchange Server\\*"
+    Company:
+      - Microsoft Corporation
+  condition: selection_img and selection_ews_cli and not (filter_legitimate_admin or filter_exchange_install)
+falsepositives:
+  - Legitimate backup software or archival solutions that use EWS to index or back up mailboxes.
+  - Internal administrative scripts used by IT departments for bulk mailbox migrations or reporting.
+  - Monitoring tools that check Exchange health via EWS API calls.
+level: high

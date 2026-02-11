@@ -88,7 +88,7 @@ export async function generateYaraRules(
 ): Promise<YaraGenerationResult> {
   const {
     modelTier = 'quality',
-    maxTokens = 4096,
+    maxTokens = 16384,
     temperature = 0.2,
     maxRetries = 3,
     author = 'DetectForge',

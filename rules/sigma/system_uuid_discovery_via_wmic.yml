@@ -1,0 +1,38 @@
+title: System UUID Discovery via WMIC
+id: 038c040f-d025-48e4-88d3-a31fe8ef345e
+status: experimental
+description: Detects the execution of WMIC to retrieve the system Universally Unique Identifier (UUID). This behavior is frequently observed in ransomware families like BlackCat (ALPHV) to generate unique victim identifiers and access keys for recovery portals.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.discovery
+  - attack.t1082
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_wmic:
+    Image:
+      - "*\\wmic.exe"
+    CommandLine:
+      - "*csproduct*"
+      - "*uuid*"
+  selection_specific_args:
+    CommandLine:
+      - "*get uuid*"
+  filter_legitimate_inventory:
+    ParentImage:
+      - "*\\LTSvc.exe"
+      - "*\\CcmExec.exe"
+      - "*\\MonitoringHost.exe"
+      - "*\\agent.exe"
+    Company:
+      - Microsoft Corporation
+      - Dell Inc
+      - Hewlett-Packard
+  condition: selection_wmic and selection_specific_args and not filter_legitimate_inventory
+falsepositives:
+  - IT Asset Management and Inventory software (e.g., SCCM, LabTech) querying hardware identifiers for device tracking.
+  - Legitimate hardware diagnostic tools or OEM support software (e.g., Dell SupportAssist) verifying system identity.
+level: high

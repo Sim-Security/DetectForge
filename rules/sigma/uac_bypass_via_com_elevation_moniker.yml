@@ -1,0 +1,45 @@
+title: UAC Bypass via COM Elevation Moniker
+id: 8c524b96-8492-4b4c-8f2a-19b6ecf484ca
+status: experimental
+description: Detects potential UAC bypass activity where a process is spawned with High Integrity from a Medium Integrity parent, often associated with the COM Elevation Moniker (ICMLuaUtil) used by BlackCat ransomware and other malware to escalate privileges.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.privilege_escalation
+  - attack.defense_evasion
+  - attack.t1548.002
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_integrity:
+    IntegrityLevel: High
+  selection_parent_integrity:
+    ParentCommandLine:
+      - "* -m *"
+      - "* -u *"
+      - "* --uac-bypass *"
+    CommandLine:
+      - "*dllhost.exe*/Processid:{3E5FC7F9-9751-4367-B931-F30D1E5FDF6F}*"
+      - "*dllhost.exe*/Processid:{D2E7041B-2927-42fb-8E9F-7CE93B6D8819}*"
+  selection_blackcat_specific:
+    CommandLine:
+      - "*--access-token*"
+      - "*--propagate*"
+      - "*--bypass-uac*"
+  filter_legitimate_installers:
+    Company:
+      - Microsoft Corporation
+      - Google LLC
+      - Adobe Inc.
+    Image:
+      - C:\Windows\System32\*.exe
+      - C:\Windows\SysWOW64\*.exe
+  filter_msiexec:
+    ParentImage: "*\\msiexec.exe"
+  condition: (selection_integrity and (selection_parent_integrity or selection_blackcat_specific)) and not (filter_legitimate_installers or filter_msiexec)
+falsepositives:
+  - Legitimate software installers or update agents that use COM interfaces for elevated installation tasks.
+  - Administrative tools or scripts designed to perform system maintenance requiring elevated privileges via documented COM objects.
+level: high

@@ -1,0 +1,38 @@
+title: Suspicious Task Manager Launch via Command Shell
+id: 7a068fda-a097-4d8e-ae8a-bd59402abdce
+status: experimental
+description: Detects execution of Task Manager (taskmgr.exe) spawned by command shells or scripting interpreters. This pattern is commonly observed when attackers with interactive access use Task Manager to create LSASS process memory dumps for offline credential extraction, as opposed to normal GUI-based launch by users.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.credential_access
+  - attack.t1003.001
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_taskmgr:
+    Image:
+      - "*\\taskmgr.exe"
+    OriginalFileName:
+      - taskmgr.exe
+  selection_suspicious_parent:
+    ParentImage:
+      - "*\\cmd.exe"
+      - "*\\powershell.exe"
+      - "*\\pwsh.exe"
+      - "*\\wscript.exe"
+      - "*\\cscript.exe"
+      - "*\\mshta.exe"
+      - "*\\certutil.exe"
+  filter_legitimate:
+    ParentImage:
+      - "*\\explorer.exe"
+      - "*\\winlogon.exe"
+      - "*\\userinit.exe"
+  condition: selection_taskmgr and selection_suspicious_parent and not filter_legitimate
+falsepositives:
+  - Administrative scripts that programmatically launch Task Manager for remote system monitoring or troubleshooting sessions
+  - Automated remote administration tools that spawn Task Manager instances to check system resource usage on managed endpoints
+level: high

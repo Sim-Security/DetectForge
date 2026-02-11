@@ -1,0 +1,24 @@
+[
+  {
+    "Image": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "User": "CORP\\user1",
+    "Protocol": "tcp",
+    "Initiated": true,
+    "SourceIp": "10.0.1.100",
+    "SourcePort": 50000,
+    "DestinationIp": "142.250.80.100",
+    "DestinationHostname": "www.google.com",
+    "DestinationPort": 443
+  },
+  {
+    "Image": "C:\\Windows\\System32\\svchost.exe",
+    "User": "NT AUTHORITY\\NETWORK SERVICE",
+    "Protocol": "tcp",
+    "Initiated": true,
+    "SourceIp": "10.0.1.5",
+    "SourcePort": 50100,
+    "DestinationIp": "20.190.159.0",
+    "DestinationHostname": "login.microsoftonline.com",
+    "DestinationPort": 443
+  }
+]

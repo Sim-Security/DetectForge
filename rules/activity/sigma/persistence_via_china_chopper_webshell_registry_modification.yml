@@ -1,0 +1,43 @@
+title: Persistence via China Chopper Webshell Registry Modification
+id: 1fd4d706-c496-4b32-8dc4-78839b251bd9
+status: experimental
+description: Detects suspicious registry modifications associated with China Chopper webshell persistence or configuration on Microsoft Exchange servers. Attackers often use registry keys to store configuration data or facilitate persistence after exploiting vulnerabilities like ProxyLogon or ProxyShell.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.persistence
+  - attack.t1505.003
+logsource:
+  product: windows
+  category: registry_set
+detection:
+  selection_iis_process:
+    Image:
+      - "*\\w3wp.exe"
+      - "*\\UMWorkerProcess.exe"
+  selection_suspicious_keys:
+    TargetObject:
+      - "*\\CurrentControlSet\\Services\\MSExchange*"
+      - "*\\Software\\Microsoft\\ExchangeServer\\*"
+      - "*\\Control\\Terminal Server\\WinStations\\RDP-Tcp\\*"
+    Details:
+      - "*eval(*"
+      - "*Page.Load*"
+      - "*Request.Item*"
+      - "*unsafe*"
+      - "*CU2\\he\\debug*"
+  filter_system_accounts:
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\NETWORK SERVICE
+    EventType: RegSetValue
+  filter_legitimate_updates:
+    Image:
+      - "*\\msexchangerepl.exe"
+      - "*\\Microsoft.Exchange.Store.Worker.exe"
+  condition: selection_iis_process and selection_suspicious_keys and not (filter_system_accounts or filter_legitimate_updates)
+falsepositives:
+  - Legitimate Exchange Server configuration changes during cumulative updates or service pack installations.
+  - Third-party Exchange security or monitoring agents that modify registry keys for diagnostic purposes.
+level: high

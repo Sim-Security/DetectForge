@@ -1,0 +1,14 @@
+[
+  {
+    "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "TargetFilename": "C:\\Users\\Public\\payload.exe",
+    "CreationUtcTime": "2026-02-10 12:00:00.000",
+    "User": "CORP\\jdoe"
+  },
+  {
+    "Image": "C:\\Windows\\System32\\cmd.exe",
+    "TargetFilename": "C:\\Users\\jdoe\\AppData\\Local\\Temp\\mimikatz.exe",
+    "CreationUtcTime": "2026-02-10 12:05:00.000",
+    "User": "CORP\\jdoe"
+  }
+]

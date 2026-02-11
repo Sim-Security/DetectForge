@@ -1,0 +1,11 @@
+[
+  {
+    "EventType": "WmiConsumerEvent",
+    "Operation": "Created",
+    "User": "NT AUTHORITY\\SYSTEM",
+    "EventNamespace": "root\\subscription",
+    "Name": "SCCMConsumer",
+    "Destination": "C:\\Windows\\CCM\\ccmexec.exe",
+    "Consumer": "CommandLineEventConsumer"
+  }
+]

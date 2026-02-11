@@ -1,0 +1,53 @@
+title: Suspicious Process Spawned by Svchost.exe via Cobalt Strike Injection
+id: 5f7d522d-d723-463b-8db2-02dd4078ddeb
+status: experimental
+description: Detects suspicious child processes spawned by svchost.exe, which is a common indicator of post-exploitation activity following DLL injection by tools like Cobalt Strike. Beacons often inject into svchost.exe and subsequently spawn shells or discovery tools.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.defense_evasion
+  - attack.privilege_escalation
+  - attack.t1055.001
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_parent:
+    ParentImage:
+      - "*\\svchost.exe"
+  selection_child_processes:
+    Image:
+      - "*\\cmd.exe"
+      - "*\\powershell.exe"
+      - "*\\pwsh.exe"
+      - "*\\net.exe"
+      - "*\\net1.exe"
+      - "*\\whoami.exe"
+      - "*\\nltest.exe"
+      - "*\\hostname.exe"
+      - "*\\ipconfig.exe"
+  selection_suspicious_targets:
+    Image:
+      - "*\\rundll32.exe"
+      - "*\\regsvr32.exe"
+    CommandLine:
+      - "*rundll32.exe"
+      - "*regsvr32.exe"
+      - "*rundll32.exe "
+      - "*regsvr32.exe "
+  filter_legitimate_svchost:
+    Image:
+      - "*\\runtimebroker.exe"
+      - "*\\werfault.exe"
+      - "*\\wermgr.exe"
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\NETWORK SERVICE
+      - NT AUTHORITY\LOCAL SERVICE
+  condition: selection_parent and (selection_child_processes or selection_suspicious_targets) and not filter_legitimate_svchost
+falsepositives:
+  - Legitimate system management scripts or scheduled tasks that use svchost to launch administrative tools
+  - Security software or monitoring agents that may trigger child processes from a service host context
+  - Windows Error Reporting (WerFault.exe) triggered by a service crash
+level: high

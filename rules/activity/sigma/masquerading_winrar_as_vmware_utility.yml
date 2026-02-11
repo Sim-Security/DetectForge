@@ -1,0 +1,49 @@
+title: Masquerading WinRAR as VMware Utility
+id: 3924263b-c51f-4023-80fa-70b6c408d4f9
+status: experimental
+description: Detects the execution of a renamed WinRAR utility masquerading as 'VMware.exe'. This technique is used by threat actors to evade detection while compressing and splitting sensitive data into chunks for exfiltration, as seen in campaigns targeting government and defense sectors.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.defense_evasion
+  - attack.t1036.003
+  - attack.exfiltration
+  - attack.t1020
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_masquerade:
+    Image:
+      - "*\\VMware.exe"
+    OriginalFileName:
+      - WinRAR.exe
+      - Rar.exe
+  selection_behavior:
+    CommandLine:
+      - "* -v3M *"
+      - "* -v3072k *"
+      - "* a *"
+      - "* m *"
+    Description:
+      - "*WinRAR*"
+      - "*RAR Archiver*"
+  filter_legitimate_vmware:
+    Company:
+      - VMware, Inc.
+      - Broadcom
+    CommandLine:
+      - "*--version*"
+      - "*-v*"
+  filter_system_user:
+    User:
+      - NT AUTHORITY\SYSTEM
+    ParentImage:
+      - "*\\Windows\\System32\\services.exe"
+  condition: (selection_masquerade or selection_behavior) and not (filter_legitimate_vmware or filter_system_user)
+falsepositives:
+  - Legitimate VMware utilities that might be misidentified by generic command line flags
+  - Administrative scripts using portable versions of WinRAR renamed for internal deployment purposes
+  - Software packaging tools that bundle compression utilities under different names
+level: high

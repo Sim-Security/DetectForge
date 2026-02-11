@@ -1,0 +1,42 @@
+title: Nokoyawa Ransomware File Activity and Ransom Note Creation
+id: 39c72346-0f5d-481d-9172-0b0ea18ee995
+status: experimental
+description: Detects file events associated with Nokoyawa ransomware, including the creation of the NOKONOKO-readme.txt ransom note and the mass renaming of files to the .NOKONOKO extension. This activity is often preceded by the use of tools like IOBit Unlocker to release file locks.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.impact
+  - attack.t1486
+logsource:
+  product: windows
+  category: file_event
+detection:
+  selection_ransom_note:
+    TargetFilename:
+      - "*\\NOKONOKO-readme.txt"
+  selection_encrypted_extension:
+    TargetFilename:
+      - "*.NOKONOKO"
+  selection_suspicious_image:
+    Image:
+      - "*\\svchost.exe"
+      - "*\\IOBitUnlocker.exe"
+      - "*\\cmd.exe"
+  filter_legitimate_system:
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\LOCAL SERVICE
+      - NT AUTHORITY\NETWORK SERVICE
+    Image:
+      - C:\Windows\System32\*
+  filter_backups:
+    TargetFilename:
+      - "*\\Backup\\*.NOKONOKO"
+    User:
+      - BACKUP_USER
+  condition: (selection_ransom_note or (selection_encrypted_extension and selection_suspicious_image)) and not (filter_legitimate_system or filter_backups)
+falsepositives:
+  - Legitimate backup software that might use a similar naming convention for temporary or encrypted archive files.
+  - Administrative scripts or file management tools used by system administrators that are misidentified due to custom extensions.
+level: critical

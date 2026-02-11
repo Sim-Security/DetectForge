@@ -1,0 +1,16 @@
+[
+  {
+    "Image": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "QueryName": "www.google.com",
+    "QueryStatus": "0",
+    "QueryResults": "142.250.80.100",
+    "User": "CORP\\user1"
+  },
+  {
+    "Image": "C:\\Windows\\System32\\svchost.exe",
+    "QueryName": "wpad.corp.local",
+    "QueryStatus": "0",
+    "QueryResults": "",
+    "User": "NT AUTHORITY\\NETWORK SERVICE"
+  }
+]

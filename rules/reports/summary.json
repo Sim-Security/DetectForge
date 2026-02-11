@@ -1,0 +1,92 @@
+{
+  "generatedAt": "2026-02-11T18:38:28.967Z",
+  "inputFile": "dfir-report-icedid-to-dagon-locker.txt",
+  "reportTitle": "# IcedID Brings ScreenConnect and CSharp Streamer to ALPHV Affiliate",
+  "formats": [
+    "sigma"
+  ],
+  "modelTier": "fast",
+  "summary": {
+    "sigmaRules": 7,
+    "yaraRules": 0,
+    "suricataRules": 0,
+    "totalRules": 7,
+    "validationPassed": 7,
+    "validationFailed": 0,
+    "totalCostUsd": 0.0694,
+    "totalTokens": 54588,
+    "durationMs": 93579
+  },
+  "iocCount": 55,
+  "ttpCount": 8,
+  "attackMappingCount": 8,
+  "rules": [
+    {
+      "format": "sigma",
+      "id": "54285146-522d-4b9d-a1a9-da990c514cfb",
+      "title": "Suspicious Network Connection Initiated by OneNote via Scripting Tools",
+      "attackTechniqueId": "T1566.001",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "2b5b97bf-a923-4ddb-8b7b-5e9b761f0e66",
+      "title": "IcedID Execution of DLL Disguised as Image via PowerShell",
+      "attackTechniqueId": "T1027.003",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "Logsource combination not found in catalog: product=\"windows\", category=\"ps_script\", service=\"powershell\""
+      ]
+    },
+    {
+      "format": "sigma",
+      "id": "53fbf5e1-a24c-4535-a3e5-1af17cb3bad9",
+      "title": "Creation of Suspicious Scheduled Task for IcedID Persistence",
+      "attackTechniqueId": "T1053.005",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "Detection field \"EventID\" is not known for logsource product=\"windows\", category=\"\""
+      ]
+    },
+    {
+      "format": "sigma",
+      "id": "5f7d522d-d723-463b-8db2-02dd4078ddeb",
+      "title": "Suspicious Process Spawned by Svchost.exe via Cobalt Strike Injection",
+      "attackTechniqueId": "T1055.001",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "8466b079-3e11-48cb-879c-9cc4db004f9a",
+      "title": "Suspicious Rundll32 Execution Pattern via Cobalt Strike",
+      "attackTechniqueId": "T1003.001",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "e8197550-58f4-4675-a723-c235814d86e0",
+      "title": "Data Exfiltration via FileZilla SFTP Connection",
+      "attackTechniqueId": "T1048.003",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "39c72346-0f5d-481d-9172-0b0ea18ee995",
+      "title": "Nokoyawa Ransomware File Activity and Ransom Note Creation",
+      "attackTechniqueId": "T1486",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    }
+  ]
+}

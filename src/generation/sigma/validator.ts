@@ -9,6 +9,7 @@
 
 import YAML from 'yaml';
 import { validateSigmaLogsource } from '@/knowledge/logsource-catalog/index.js';
+import { validateRuleFields } from '@/testing/field-validator.js';
 import type { SigmaRule, ValidationResult } from '@/types/detection-rule.js';
 
 // ---------------------------------------------------------------------------
@@ -118,6 +119,21 @@ export function validateSigmaRule(rule: SigmaRule): ValidationResult {
           `Logsource combination not found in catalog: product="${rule.logsource.product}"` +
             `${rule.logsource.category ? `, category="${rule.logsource.category}"` : ''}` +
             `${rule.logsource.service ? `, service="${rule.logsource.service}"` : ''}`,
+        );
+      }
+    }
+  }
+
+  // --- Field validation against logsource ---
+
+  if (rule.logsource && rule.detection) {
+    const fieldResult = validateRuleFields(rule);
+    if (!fieldResult.unknownLogsource && fieldResult.invalidFields.length > 0) {
+      for (const field of fieldResult.invalidFields) {
+        warnings.push(
+          `Detection field "${field}" is not known for logsource ` +
+            `product="${rule.logsource.product ?? ''}", ` +
+            `category="${rule.logsource.category ?? ''}"`,
         );
       }
     }
@@ -249,8 +265,23 @@ export function validateSigmaYaml(yamlString: string): ValidationResult {
 // ---------------------------------------------------------------------------
 
 /**
+ * Sigma aggregation function names and operators.
+ * These appear in conditions like: `selection | count(field) by src_ip > 10`
+ */
+const AGGREGATION_KEYWORDS = new Set([
+  'count', 'min', 'max', 'avg', 'sum',
+  'by', 'near', 'filter',
+]);
+
+/** Sigma comparison / pipe operators (single-character tokens). */
+const AGGREGATION_OPERATORS = /^[|><=!]+$/;
+
+/**
  * Check that every name referenced in the `condition` string corresponds
  * to a key in the detection block.
+ *
+ * Handles standard boolean conditions (`selection and not filter`) as well
+ * as Sigma aggregation expressions (`selection | count(field) by src > 5`).
  */
 function validateConditionReferences(
   detection: Record<string, unknown>,
@@ -259,9 +290,16 @@ function validateConditionReferences(
 ): void {
   const condition = detection.condition as string;
 
-  // Extract all potential selection/filter identifiers from the condition.
-  // We strip boolean operators and parentheses, then grab word tokens.
-  const tokens = condition
+  // Detect whether the condition uses aggregation syntax (pipe operator).
+  // If so, only validate the part *before* the pipe — everything after
+  // the pipe is aggregation logic (functions, field names, operators,
+  // thresholds) that does not reference detection block keys.
+  const pipeIndex = condition.indexOf('|');
+  const booleanPart = pipeIndex >= 0 ? condition.substring(0, pipeIndex) : condition;
+
+  // Extract all potential selection/filter identifiers from the boolean part.
+  // We strip parentheses and split on whitespace, then filter out keywords.
+  const tokens = booleanPart
     .replace(/\(|\)/g, ' ')
     .split(/\s+/)
     .filter((token) => {
@@ -274,7 +312,9 @@ function validateConditionReferences(
         lower !== '1' &&
         lower !== 'of' &&
         lower !== 'them' &&
-        lower !== 'all'
+        lower !== 'all' &&
+        !AGGREGATION_KEYWORDS.has(lower) &&
+        !AGGREGATION_OPERATORS.test(token)
       );
     });
 
@@ -284,8 +324,7 @@ function validateConditionReferences(
 
   for (const token of tokens) {
     // Handle wildcard patterns like "selection_*" or "filter*" used with
-    // the "1 of selection_*" Sigma syntax.  Also skip pure numeric tokens
-    // (used in "1 of ..." syntax) and the special keyword "them".
+    // the "1 of selection_*" Sigma syntax.
     if (token.includes('*')) {
       const prefix = token.replace(/\*/g, '');
       const matched = [...detectionKeys].some((key) => key.startsWith(prefix));

@@ -1,0 +1,45 @@
+title: Exfiltration to OneDrive via Non-Standard Process
+id: 26b42320-ee3d-452a-81d1-5be8e440bf3f
+status: experimental
+description: Detects network connections to Microsoft OneDrive (onedrive.live.com) initiated by processes that are not standard web browsers or the official OneDrive sync client. This behavior is consistent with custom exfiltration tools like CovalentStealer which target cloud storage for data theft.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.exfiltration
+  - attack.t1567.002
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_destination:
+    DestinationHostname:
+      - "*onedrive.live.com*"
+      - "*api.onedrive.com*"
+      - "*storage.live.com*"
+    Initiated:
+      - true
+  selection_unusual_process:
+    Image:
+      - "*\\temp\\*"
+      - "*\\users\\public\\*"
+      - "*\\appdata\\local\\temp\\*"
+      - "*\\programdata\\*"
+  filter_legitimate_clients:
+    Image:
+      - "*\\onedrive.exe"
+      - "*\\chrome.exe"
+      - "*\\msedge.exe"
+      - "*\\firefox.exe"
+      - "*\\brave.exe"
+      - "*\\iexplore.exe"
+  filter_system_processes:
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\NETWORK SERVICE
+  condition: selection_destination and selection_unusual_process and not (filter_legitimate_clients or filter_system_processes)
+falsepositives:
+  - Users running portable versions of web browsers from temporary directories or non-standard paths.
+  - Legitimate third-party backup or synchronization software that integrates with OneDrive but is not the official client.
+  - Internal developers testing applications that use the OneDrive API for legitimate file storage.
+level: high

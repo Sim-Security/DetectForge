@@ -18,7 +18,7 @@ import type {
   SigmaRule,
   ValidationResult,
 } from '@/types/detection-rule.js';
-import { getTemplate } from '@/generation/sigma/templates.js';
+import { validateRuleFields } from '@/testing/field-validator.js';
 
 // ---------------------------------------------------------------------------
 // Public Types
@@ -212,22 +212,20 @@ function scoreSigmaDetectionLogic(sigma: SigmaRule): number {
   if (filterKeys.length >= 2) score += 2;
   else if (filterKeys.length >= 1) score += 1;
 
-  // --- 3. Field relevance — check fields against logsource template (0-2 pts) ---
-  const category = sigma.logsource.category ?? sigma.logsource.service ?? '';
-  const template = getTemplate(category);
-  const usedFields = extractSigmaFields(detection, detectionKeys);
-
-  if (template && usedFields.size > 0) {
-    const knownFields = new Set(template.availableFields);
-    let relevantCount = 0;
-    for (const field of usedFields) {
-      if (knownFields.has(field)) relevantCount++;
+  // --- 3. Field relevance — validate fields against logsource catalog (0-2 pts, -3 for invalids) ---
+  const fieldResult = validateRuleFields(sigma);
+  if (!fieldResult.unknownLogsource && fieldResult.allDetectionFields.length > 0) {
+    if (fieldResult.fieldValidityRate >= 0.8 && fieldResult.validFields.length >= 2) {
+      score += 2;
+    } else if (fieldResult.fieldValidityRate >= 0.5 || fieldResult.validFields.length >= 1) {
+      score += 1;
     }
-    const relevanceRatio = relevantCount / usedFields.size;
-    if (relevanceRatio >= 0.5 && relevantCount >= 2) score += 2;
-    else if (relevanceRatio >= 0.3 || relevantCount >= 1) score += 1;
-  } else if (usedFields.size >= 2) {
-    // No template match but still using multiple fields
+    // Heavier penalty for invalid fields — this is the #1 defect from red team
+    if (fieldResult.invalidFields.length > 0) {
+      score -= Math.min(3, fieldResult.invalidFields.length);
+    }
+  } else if (fieldResult.allDetectionFields.length >= 2) {
+    // Unknown logsource but still using multiple fields
     score += 1;
   }
 
@@ -492,25 +490,6 @@ function scoreFpFromDoc(doc: RuleDocumentation): number {
 // ---------------------------------------------------------------------------
 // Content Analysis Helpers
 // ---------------------------------------------------------------------------
-
-/**
- * Extract all field names used in Sigma detection blocks.
- */
-function extractSigmaFields(
-  detection: Record<string, unknown>,
-  detectionKeys: string[],
-): Set<string> {
-  const fields = new Set<string>();
-  for (const key of detectionKeys) {
-    const block = detection[key];
-    if (block && typeof block === 'object' && !Array.isArray(block)) {
-      for (const fieldName of Object.keys(block as Record<string, unknown>)) {
-        fields.add(fieldName);
-      }
-    }
-  }
-  return fields;
-}
 
 /**
  * Analyze value patterns in Sigma detection blocks.

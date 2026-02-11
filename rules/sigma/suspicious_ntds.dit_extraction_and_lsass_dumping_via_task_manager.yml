@@ -1,0 +1,48 @@
+title: Suspicious NTDS.DIT Extraction and LSASS Dumping via Task Manager
+id: 43241ba3-5a37-4e64-bce6-6476a6e86f85
+status: experimental
+description: Detects patterns of credential dumping including the compression of the Active Directory database (ntds.dit) and the creation of LSASS memory dumps using Task Manager. This behavior is consistent with post-exploitation activities where attackers attempt to harvest credentials for lateral movement.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.credential_access
+  - attack.t1003.001
+  - attack.t1003.003
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_lsass_dump:
+    ParentImage:
+      - "*\\taskmgr.exe"
+    CommandLine:
+      - "*lsass.dmp*"
+  selection_ntds_compression:
+    Image:
+      - "*\\7z.exe"
+      - "*\\7za.exe"
+      - "*\\rar.exe"
+      - "*\\zip.exe"
+    CommandLine:
+      - "*ntds.dit*"
+  selection_vhd_mount:
+    Image:
+      - "*\\powershell.exe"
+      - "*\\pwsh.exe"
+    CommandLine:
+      - "*Mount-VHD*"
+      - "*Mount-DiskImage*"
+  filter_legitimate_backup:
+    Company:
+      - Veeam Software*
+      - Microsoft Corporation
+    CommandLine:
+      - "*\\Backup\\*"
+      - "*\\Veeam\\*"
+  condition: (selection_lsass_dump or selection_ntds_compression or selection_vhd_mount) and not filter_legitimate_backup
+falsepositives:
+  - Legitimate backup software or scripts that compress the Active Directory database for offsite storage.
+  - Administrators manually mounting VHD files for disaster recovery testing or maintenance.
+  - Antivirus or EDR solutions generating memory dumps for diagnostic purposes.
+level: high

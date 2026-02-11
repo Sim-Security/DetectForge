@@ -1,0 +1,34 @@
+title: Suspicious Security Log Cleared by User Account
+id: 050fe472-5f7a-46ef-9fbb-57782f6c0696
+status: experimental
+description: Detects the manual clearing of the Windows Security event log (Event ID 1102) by interactive user accounts or domain users. This behavior is commonly associated with threat actors attempting to destroy forensic evidence and obscure their operational activities during post-exploitation phases, including incidents involving compromised VPN infrastructure where attackers clear logs to hide their tracks on management hosts.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.defense_evasion
+  - attack.t1070.002
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_log_cleared:
+    EventID:
+      - 1102
+  selection_user_account:
+    SubjectUserSid:
+      - S-1-5-21-*
+  filter_system_accounts:
+    SubjectUserSid:
+      - S-1-5-18
+      - S-1-5-19
+      - S-1-5-20
+  filter_legitimate_admins:
+    SubjectUserName:
+      - ScheduledTaskAccount
+      - LogRotationService
+  condition: selection_log_cleared and selection_user_account and not filter_system_accounts and not filter_legitimate_admins
+falsepositives:
+  - Legitimate administrative maintenance activities performed by authorized system administrators clearing logs for retention policy compliance
+  - Automated security tools or backup solutions that rotate and clear event logs as part of routine system maintenance
+level: high

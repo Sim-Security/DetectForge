@@ -1,0 +1,45 @@
+title: Security Tool Exclusion Modification via Scripting Interpreter
+id: 405d038d-692e-47f9-97e0-2b65a5feeecd
+status: experimental
+description: Detects modifications to antivirus or antimalware exclusion lists in the Windows Registry, particularly when performed by scripting interpreters or command-line tools. This behavior is commonly observed when threat actors attempt to hide web shells or other malicious components from security scanning, analogous to manipulating Integrity Checker Tool exclusions in compromised VPN appliances to maintain persistence.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.persistence
+  - attack.t1505.003
+  - attack.defense_evasion
+  - attack.t1562.001
+logsource:
+  product: windows
+  category: registry_set
+detection:
+  selection_exclusion_paths:
+    TargetObject:
+      - "*\\SOFTWARE\\Microsoft\\Windows Defender\\Exclusions\\Paths\\*"
+      - "*\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Exclusions\\Paths\\*"
+      - "*\\SOFTWARE\\Microsoft\\Microsoft Antimalware\\Exclusions\\Paths\\*"
+      - "*\\SOFTWARE\\Microsoft\\Windows Defender\\Exclusions\\Extensions\\*"
+      - "*\\SOFTWARE\\Microsoft\\Windows Defender\\Exclusions\\Processes\\*"
+  selection_suspicious_image:
+    Image:
+      - "*\\cmd.exe"
+      - "*\\powershell.exe"
+      - "*\\pwsh.exe"
+      - "*\\python.exe"
+      - "*\\pythonw.exe"
+      - "*\\perl.exe"
+      - "*\\wscript.exe"
+      - "*\\cscript.exe"
+  filter_legitimate_system:
+    Image:
+      - "*\\svchost.exe"
+      - "*\\services.exe"
+      - "*\\MsMpEng.exe"
+      - "*\\MpCmdRun.exe"
+      - "*\\CCMExec.exe"
+  condition: selection_exclusion_paths and selection_suspicious_image and not filter_legitimate_system
+falsepositives:
+  - Legitimate administrative scripts that temporarily add exclusions for web server directories during maintenance or troubleshooting activities
+  - Automated deployment tools or configuration management systems that set antivirus exclusions for application directories during software installation
+level: high

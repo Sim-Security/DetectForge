@@ -1,0 +1,47 @@
+title: Internal Network Service Discovery via Renamed Scanner Utility
+id: 03179656-9522-4adb-817a-ff99b88a0ba2
+status: experimental
+description: Detects internal network scanning and enumeration activity (WMI, SNMP, SMB) initiated by processes with suspicious names like 'Intel.exe' or 'Dell.exe' located in the root directory, a behavior associated with Black Basta affiliates using SoftPerfect Network Scanner.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.discovery
+  - attack.t1046
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_suspicious_image:
+    Image:
+      - C:\Intel.exe
+      - C:\Dell.exe
+      - "*\\netscan.exe"
+  selection_discovery_ports:
+    DestinationPort:
+      - 135
+      - 137
+      - 139
+      - 161
+      - 162
+      - 445
+      - 5985
+      - 5986
+    Initiated:
+      - true
+  filter_legitimate_admin:
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\NETWORK SERVICE
+    Image:
+      - "*\\Windows\\System32\\*"
+      - "*\\Windows\\SysWOW64\\*"
+  filter_known_scanners:
+    DestinationHostname:
+      - localhost
+      - 127.0.0.1
+  condition: selection_suspicious_image and selection_discovery_ports and not (filter_legitimate_admin or filter_known_scanners)
+falsepositives:
+  - Legitimate IT inventory or asset management tools that use vendor-named executables for network discovery.
+  - Internal vulnerability scanners or network monitoring solutions configured to run from non-standard paths.
+level: high

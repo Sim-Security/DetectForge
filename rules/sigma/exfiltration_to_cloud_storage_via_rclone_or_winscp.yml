@@ -1,0 +1,51 @@
+title: Exfiltration to Cloud Storage via RClone or WinSCP
+id: 4a3941ac-a886-4732-b7b7-9514de7cb0cb
+status: experimental
+description: Detects network connections initiated by RClone or WinSCP to common cloud storage destinations or over standard web ports. This behavior is frequently associated with data exfiltration prior to ransomware deployment, specifically using tools to sync local data to actor-controlled cloud accounts.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.exfiltration
+  - attack.t1567.002
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_tools:
+    Image:
+      - "*\\rclone.exe"
+      - "*\\winscp.exe"
+      - "*\\rclone-*.exe"
+    Initiated:
+      - true
+  selection_destinations:
+    DestinationHostname:
+      - "*.mega.nz"
+      - "*.mega.co.nz"
+      - "*.dropboxapi.com"
+      - "*.s3.amazonaws.com"
+      - "*.googleapis.com"
+      - "*.backblazeb2.com"
+      - "*.pcloud.com"
+    DestinationPort:
+      - 80
+      - 443
+      - 8080
+  filter_legitimate_admin:
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\NETWORK SERVICE
+    DestinationHostname:
+      - "*.microsoft.com"
+      - "*.windowsupdate.com"
+  filter_known_paths:
+    Image:
+      - C:\Program Files\WinSCP\WinSCP.exe
+      - C:\Program Files (x86)\WinSCP\WinSCP.exe
+  condition: selection_tools and selection_destinations and not (filter_legitimate_admin or filter_known_paths)
+falsepositives:
+  - Legitimate use of WinSCP by system administrators for scheduled backups to cloud endpoints
+  - Authorized use of RClone for synchronizing data between corporate cloud storage environments
+  - Automated software update processes that utilize WinSCP libraries or similar binary names
+level: high

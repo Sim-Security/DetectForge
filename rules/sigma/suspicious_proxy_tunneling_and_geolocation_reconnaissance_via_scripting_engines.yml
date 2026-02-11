@@ -1,0 +1,52 @@
+title: Suspicious Proxy Tunneling and Geolocation Reconnaissance via Scripting Engines
+id: be7dc23b-cd03-4fb9-b4e4-b3fab061d387
+status: experimental
+description: Detects network connections indicative of proxy and tunneling behavior (T1090) including SOCKS proxy usage, SSH tunneling, and IP geolocation reconnaissance initiated by scripting engines and command-line tools. This behavior is associated with establishing reverse SOCKS proxies and C2 channels through compromised infrastructure, specifically involving tools like PySoxy and curl.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.command_and_control
+  - attack.t1090
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_proxy_tunnel:
+    Initiated:
+      - true
+    Image:
+      - "*\\python.exe"
+      - "*\\pythonw.exe"
+      - "*\\cmd.exe"
+      - "*\\powershell.exe"
+    DestinationPort:
+      - 22
+      - 1080
+      - 1081
+      - 3128
+      - 8080
+  selection_geolocation_check:
+    Initiated:
+      - true
+    Image:
+      - "*\\python.exe"
+      - "*\\pythonw.exe"
+      - "*\\cmd.exe"
+      - "*\\powershell.exe"
+      - "*\\curl.exe"
+    DestinationHostname:
+      - ip-api.com
+  filter_legitimate_tools:
+    Image:
+      - "*\\ssh.exe"
+      - "*\\putty.exe"
+      - "*\\plink.exe"
+      - "*\\pageant.exe"
+      - "*\\git.exe"
+  condition: (selection_proxy_tunnel or selection_geolocation_check) and not filter_legitimate_tools
+falsepositives:
+  - Legitimate Python automation scripts using libraries like Paramiko or PySocks for SSH/SOCKS connections in enterprise environments
+  - System administrators using PowerShell or command-line tools to establish SSH tunnels for routine maintenance or troubleshooting
+  - Security tools and vulnerability scanners that check external IP addresses via ip-api.com or similar services
+level: high

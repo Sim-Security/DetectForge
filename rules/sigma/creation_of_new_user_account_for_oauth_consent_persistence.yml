@@ -1,0 +1,40 @@
+title: Creation of New User Account for OAuth Consent Persistence
+id: 7f9fef59-b878-4693-969f-4c1b629a4e4a
+status: experimental
+description: Detects the creation of a new user account followed by potential service principal or administrative activity. This behavior mimics techniques used by threat actors like Midnight Blizzard to create 'consent' accounts that grant permissions to malicious OAuth applications, ensuring persistence in the environment.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.persistence
+  - attack.t1136.003
+  - attack.t1098.003
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_account_creation:
+    EventID:
+      - 4720
+      - 4722
+  selection_service_context:
+    ServiceName:
+      - "*Azure*"
+      - "*Entra*"
+      - "*OAuth*"
+      - "*AppConsent*"
+  filter_domain_controllers:
+    SubjectUserName:
+      - "*$"
+      - MSOL_*
+    SubjectDomainName:
+      - NT AUTHORITY
+  filter_admin_tools:
+    ProcessName:
+      - "*\\AzureADConnect.exe"
+      - "*\\Microsoft.Online.Reporting.MonitoringAgent.Startup.exe"
+  condition: (selection_account_creation and selection_service_context) and not (filter_domain_controllers or filter_admin_tools)
+falsepositives:
+  - Legitimate automated provisioning of cloud-sync accounts via Azure AD Connect or similar identity synchronization tools.
+  - Administrative creation of service accounts specifically designated for managing legacy OAuth application integrations.
+level: high

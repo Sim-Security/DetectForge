@@ -1,0 +1,51 @@
+title: HTML Smuggling Payload Assembly via PowerShell ScriptBlock
+id: f265f665-66fd-4cf5-9251-f450594fca37
+status: experimental
+description: Detects PowerShell script blocks containing patterns associated with HTML smuggling and local payload assembly. This includes the use of Blob objects, URL.createObjectURL, or msSaveOrOpenBlob methods combined with large encoded strings or XOR decoding logic, often used to bypass perimeter security by reconstructing malicious files (like ISO or ZIP) directly in the browser or via HTA files.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.defense_evasion
+  - attack.t1027.006
+logsource:
+  product: windows
+  category: ps_script
+  service: powershell
+detection:
+  selection_smuggling_methods:
+    ScriptBlockText:
+      - "*msSaveOrOpenBlob*"
+      - "*createObjectURL*"
+      - "*window.URL.createObjectURL*"
+      - "*navigator.msSaveBlob*"
+  selection_payload_indicators:
+    ScriptBlockText:
+      - "*application/octet-stream*"
+      - "*.iso*"
+      - "*.zip*"
+      - "*.hta*"
+      - "*fromCharArray*"
+      - "*base64*"
+  selection_obfuscation:
+    ScriptBlockText:
+      - "*bxor*"
+      - "*-bxor*"
+      - "*.CharCodeAt*"
+      - "*String.fromCharCode*"
+  filter_legitimate_web_apps:
+    Path:
+      - "*\\AzureAD\\*"
+      - "*\\Microsoft\\Teams\\*"
+      - "*\\WebEx\\*"
+  filter_developer_tools:
+    ScriptBlockText:
+      - "*webpack*"
+      - "*angular*"
+      - "*react-dom*"
+  condition: (selection_smuggling_methods and (selection_payload_indicators or selection_obfuscation)) and not (filter_legitimate_web_apps or filter_developer_tools)
+falsepositives:
+  - Legitimate web applications that use Blob objects for client-side file generation (e.g., exporting CSVs or PDF reports).
+  - Internal administrative tools that use HTA or PowerShell to package diagnostic logs into ZIP files.
+  - Web-based development environments or IDEs that handle file objects locally.
+level: high

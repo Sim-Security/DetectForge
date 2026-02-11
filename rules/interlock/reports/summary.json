@@ -1,0 +1,88 @@
+{
+  "generatedAt": "2026-02-11T16:52:51.772Z",
+  "inputFile": "cisa-interlock-aa25-203a.md",
+  "reportTitle": "StopRansomware: Interlock (CISA AA25-203A)",
+  "formats": [
+    "sigma"
+  ],
+  "modelTier": "fast",
+  "summary": {
+    "sigmaRules": 7,
+    "yaraRules": 0,
+    "suricataRules": 0,
+    "totalRules": 7,
+    "validationPassed": 7,
+    "validationFailed": 0,
+    "totalCostUsd": 0.0969,
+    "totalTokens": 61236,
+    "durationMs": 166351
+  },
+  "iocCount": 7,
+  "ttpCount": 7,
+  "attackMappingCount": 7,
+  "rules": [
+    {
+      "format": "sigma",
+      "id": "47197369-0dd2-42f5-980f-bd863f82f301",
+      "title": "Execution of Suspicious PowerShell via Windows Run Dialog (ClickFix)",
+      "attackTechniqueId": "T1204.002",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "12700bbc-d2ce-40bb-bd43-937ce24c82a4",
+      "title": "Persistence via Chrome Updater Registry Run Key",
+      "attackTechniqueId": "T1547.001",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "07f5ad97-38ad-4b81-85e7-2e319e16a494",
+      "title": "System Information Discovery via Native Tools and PowerShell",
+      "attackTechniqueId": "T1082",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "9801d2a0-cc62-411d-96ea-fcf632139547",
+      "title": "Masquerading as Legitimate Software via Interlock Ransomware Patterns",
+      "attackTechniqueId": "T1036.005",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "2c2363e6-7365-4dc4-b1c6-0bc0899ca776",
+      "title": "Potential Kerberoasting Activity via Weak Encryption Type",
+      "attackTechniqueId": "T1558.003",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "dba970c3-089e-43cb-a88e-75dce955b8ca",
+      "title": "Exfiltration to Azure Blob Storage via AzCopy or WinSCP",
+      "attackTechniqueId": "T1567.002",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "9ab9c379-3dcc-442c-bd46-f31a3bcd4c4e",
+      "title": "Indicator Removal via Cleanup DLL File Deletion",
+      "attackTechniqueId": "T1070.004",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    }
+  ]
+}

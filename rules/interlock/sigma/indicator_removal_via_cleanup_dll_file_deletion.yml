@@ -1,0 +1,38 @@
+title: Indicator Removal via Cleanup DLL File Deletion
+id: 9ab9c379-3dcc-442c-bd46-f31a3bcd4c4e
+status: experimental
+description: Detects the deletion of files, specifically targeting the removal of ransomware encryption binaries or forensic artifacts by a cleanup DLL (e.g., tmp41.wasd) typically executed via rundll32.exe. This behavior is associated with defense evasion and indicator removal after an encryption process.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.defense_evasion
+  - attack.t1070.004
+logsource:
+  product: windows
+  category: file_event
+detection:
+  selection_cleanup_process:
+    Image:
+      - "*\\rundll32.exe"
+  selection_suspicious_extensions:
+    TargetFilename:
+      - "*.wasd"
+      - "*.tmp"
+      - "*\\tmp41.wasd"
+  selection_common_locations:
+    TargetFilename:
+      - C:\Users\Public\*
+      - C:\Windows\Temp\*
+      - C:\Users\*\AppData\Local\Temp\*
+  filter_legitimate_rundll32:
+    TargetFilename:
+      - "*.dll"
+      - "*.cpl"
+      - "*.inf"
+  condition: selection_cleanup_process and (selection_suspicious_extensions or selection_common_locations) and not filter_legitimate_rundll32
+falsepositives:
+  - Legitimate software installers using rundll32 to clean up temporary installation files
+  - Administrative scripts performing automated maintenance in temp directories
+  - Antivirus or security software performing file operations
+level: high

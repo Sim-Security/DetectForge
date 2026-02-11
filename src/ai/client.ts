@@ -64,7 +64,7 @@ export class AIClient {
         baseUrl: 'https://openrouter.ai/api/v1',
       },
       costTracking: process.env.TRACK_API_COSTS !== 'false',
-      maxTokensPerRequest: 4096,
+      maxTokensPerRequest: 16384,
       temperature: 0.1,
     };
 

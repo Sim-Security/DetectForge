@@ -1,0 +1,16 @@
+[
+  {
+    "Image": "C:\\Users\\Public\\beacon.exe",
+    "QueryName": "c2.evil.example.com",
+    "QueryStatus": "0",
+    "QueryResults": "198.51.100.42",
+    "User": "CORP\\jdoe"
+  },
+  {
+    "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "QueryName": "data.exfil.example.com",
+    "QueryStatus": "0",
+    "QueryResults": "203.0.113.50",
+    "User": "CORP\\admin"
+  }
+]

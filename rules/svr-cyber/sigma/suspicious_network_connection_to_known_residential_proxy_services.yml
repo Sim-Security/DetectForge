@@ -1,0 +1,51 @@
+title: Suspicious Network Connection to Known Residential Proxy Services
+id: 138226a4-bb87-4158-85c7-56b2712702fd
+status: experimental
+description: Detects network connections to known residential proxy provider infrastructure. Attackers use these services to route malicious traffic through residential IP space to evade IP-based reputation filtering and geolocation-based conditional access policies.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.command_and_control
+  - attack.t1090.002
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_proxy_destinations:
+    DestinationHostname:
+      - "*brightdata.com"
+      - "*luminati.io"
+      - "*oxylabs.io"
+      - "*smartproxy.com"
+      - "*soax.com"
+      - "*infatica.io"
+      - "*netnut.io"
+      - "*geosurf.io"
+      - "*packetstream.io"
+      - "*microleaves.com"
+      - "*shifter.io"
+  selection_proxy_ports:
+    DestinationPort:
+      - 8888
+      - 9999
+      - 10000
+      - 10001
+      - 12321
+      - 20000
+      - 3128
+      - 8080
+  filter_legitimate_browsers:
+    Image:
+      - "*\\chrome.exe"
+      - "*\\msedge.exe"
+      - "*\\firefox.exe"
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\NETWORK SERVICE
+  condition: (selection_proxy_destinations or selection_proxy_ports) and not filter_legitimate_browsers
+falsepositives:
+  - Marketing departments using residential proxies for localized SEO or ad verification
+  - Developers testing geolocation-aware applications
+  - Legitimate use of corporate web proxies that happen to use similar port numbers
+level: high

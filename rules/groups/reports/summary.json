@@ -1,0 +1,72 @@
+{
+  "generatedAt": "2026-02-11T18:35:50.884Z",
+  "inputFile": "mandiant-apt29-diplomatic-phishing.txt",
+  "reportTitle": "# APT29 Uses BMW Car Ad Phishing Lure to Target Diplomats",
+  "formats": [
+    "sigma"
+  ],
+  "modelTier": "fast",
+  "summary": {
+    "sigmaRules": 5,
+    "yaraRules": 0,
+    "suricataRules": 0,
+    "totalRules": 5,
+    "validationPassed": 5,
+    "validationFailed": 0,
+    "totalCostUsd": 0.043,
+    "totalTokens": 34210,
+    "durationMs": 58074
+  },
+  "iocCount": 21,
+  "ttpCount": 5,
+  "attackMappingCount": 5,
+  "rules": [
+    {
+      "format": "sigma",
+      "id": "993adb40-9537-4d4a-99a4-7789063af261",
+      "title": "Suspicious Network Connection to URL Shorteners via Office Applications",
+      "attackTechniqueId": "T1566.002",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "f265f665-66fd-4cf5-9251-f450594fca37",
+      "title": "HTML Smuggling Payload Assembly via PowerShell ScriptBlock",
+      "attackTechniqueId": "T1027.006",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "Logsource combination not found in catalog: product=\"windows\", category=\"ps_script\", service=\"powershell\""
+      ]
+    },
+    {
+      "format": "sigma",
+      "id": "71491b59-826b-406b-acd4-3ada5afb1939",
+      "title": "DLL Side-Loading of AppVIsvSubsystems64 via Legitimate Microsoft Word Binary",
+      "attackTechniqueId": "T1574.002",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "d78f5d70-f208-473a-ac84-708016d215d5",
+      "title": "Suspicious Process Injection into System Processes via Shellcode Loader",
+      "attackTechniqueId": "T1055.001",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "3214374f-db2c-4f8b-a760-408e5d24b974",
+      "title": "Suspicious Network Connection to Cloud APIs via Non-Browser Process",
+      "attackTechniqueId": "T1102.002",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    }
+  ]
+}

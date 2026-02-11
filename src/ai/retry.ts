@@ -16,6 +16,8 @@ export interface RetryOptions {
   backoffMultiplier?: number;  // default: 2
   retryableErrors?: number[];  // HTTP status codes to retry (default: [429, 500, 502, 503, 504])
   onRetry?: (error: Error, attempt: number) => void;
+  /** Custom retryable check. Return true to retry, false to not, undefined to fall through to defaults. */
+  isRetryable?: (error: Error) => boolean | undefined;
 }
 
 export class RetryableError extends Error {
@@ -29,7 +31,7 @@ export class RetryableError extends Error {
   }
 }
 
-const DEFAULT_OPTIONS: Required<Omit<RetryOptions, 'onRetry'>> = {
+const DEFAULT_OPTIONS: Required<Omit<RetryOptions, 'onRetry' | 'isRetryable'>> = {
   maxRetries: 3,
   initialDelayMs: 1000,
   maxDelayMs: 30000,
@@ -54,7 +56,7 @@ export async function withRetry<T>(
       lastError = error as Error;
 
       // Check if error is retryable
-      if (!isRetryableError(error, opts.retryableErrors)) {
+      if (!isRetryableError(error, opts.retryableErrors, options.isRetryable)) {
         throw error;
       }
 
@@ -85,7 +87,17 @@ export async function withRetry<T>(
 /**
  * Check if an error is retryable.
  */
-function isRetryableError(error: unknown, retryableStatuses: number[]): boolean {
+function isRetryableError(
+  error: unknown,
+  retryableStatuses: number[],
+  customCheck?: (error: Error) => boolean | undefined,
+): boolean {
+  // Check custom retryable function first
+  if (customCheck && error instanceof Error) {
+    const result = customCheck(error);
+    if (result !== undefined) return result;
+  }
+
   if (error instanceof RetryableError) {
     return true;
   }

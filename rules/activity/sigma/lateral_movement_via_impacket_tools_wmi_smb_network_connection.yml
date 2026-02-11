@@ -1,0 +1,48 @@
+title: Lateral Movement via Impacket Tools (WMI/SMB) Network Connection
+id: 366477ff-d35f-48a9-a502-a6ba980ba708
+status: experimental
+description: Detects network connections associated with Impacket's wmiexec.py and smbexec.py. These tools are used for lateral movement by executing commands on remote systems via WMI (port 135/445/dynamic) and SMB (port 445). The rule looks for outbound connections from non-standard processes or to administrative ports initiated by suspicious sources.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.lateral_movement
+  - attack.t1021.006
+  - attack.t1021.002
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_ports:
+    DestinationPort:
+      - 135
+      - 445
+      - 5985
+      - 5986
+    Initiated: true
+  selection_processes:
+    Image:
+      - "*\\python.exe"
+      - "*\\pythonw.exe"
+      - "*\\powershell.exe"
+      - "*\\pwsh.exe"
+      - "*\\cmd.exe"
+      - "*\\wmic.exe"
+  filter_legitimate_admin:
+    User:
+      - NT AUTHORITY\SYSTEM
+      - NT AUTHORITY\NETWORK SERVICE
+    Image:
+      - "*\\svchost.exe"
+      - "*\\msiexec.exe"
+      - "*\\System"
+  filter_domain_controllers:
+    DestinationHostname:
+      - "*-DC-*"
+      - AD-*
+  condition: selection_ports and selection_processes and not (filter_legitimate_admin or filter_domain_controllers)
+falsepositives:
+  - Legitimate administrative scripts using Python or PowerShell to manage remote Exchange or Windows environments
+  - Vulnerability scanners or asset management tools performing network discovery and remote interrogation
+  - Domain Controller replication or legitimate remote management by authorized IT personnel
+level: high

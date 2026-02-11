@@ -1,0 +1,39 @@
+title: Suspicious Scheduled Task Creation Mimicking Security Services
+id: 90a95ae2-17a4-4ef8-956e-5deacd5ac500
+status: experimental
+description: Detects the creation of scheduled tasks that masquerade as legitimate Windows services such as Windows Defender or Windows Update. Attackers use this technique for persistence, often pointing the task to execute binaries from suspicious locations like Temp directories.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.persistence
+  - attack.t1053.005
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_task_creation:
+    EventID:
+      - 4698
+  selection_suspicious_names:
+    ProcessName:
+      - "*\\schtasks.exe"
+    Status:
+      - "*WindowsDefenderService*"
+      - "*IISUpdateService*"
+      - "*WindowsUpdate*"
+      - "*Defender*"
+      - "*SecurityHealth*"
+  filter_legitimate_admin:
+    SubjectUserName:
+      - SYSTEM
+      - LOCAL SERVICE
+      - NETWORK SERVICE
+  filter_domain_controllers:
+    SubjectDomainName:
+      - NT AUTHORITY
+  condition: selection_task_creation and selection_suspicious_names and not (filter_legitimate_admin or filter_domain_controllers)
+falsepositives:
+  - Legitimate security software updates that create temporary scheduled tasks for installation
+  - Administrative scripts used by IT departments to force Windows Update or Defender scans across the fleet
+level: high

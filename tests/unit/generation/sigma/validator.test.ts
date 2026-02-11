@@ -30,6 +30,7 @@ vi.mock('@/knowledge/logsource-catalog/index.js', () => ({
       return known.has(key);
     },
   ),
+  getFieldsForLogsource: vi.fn(() => []),
 }));
 
 // ---------------------------------------------------------------------------

@@ -91,7 +91,7 @@ export async function generateSuricataRules(
 ): Promise<SuricataGenerationResult> {
   const {
     modelTier = 'quality',
-    maxTokens = 4096,
+    maxTokens = 16384,
     temperature = 0.1,
     maxRetries = 3,
     sidStart = 9_000_001,

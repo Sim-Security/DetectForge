@@ -1,0 +1,41 @@
+title: IcedID Execution of DLL Disguised as Image via PowerShell
+id: 2b5b97bf-a923-4ddb-8b7b-5e9b761f0e66
+status: experimental
+description: Detects PowerShell script blocks that attempt to execute DLLs disguised with image file extensions (e.g., .jpg, .gif, .png) using rundll32.exe. This behavior is characteristic of IcedID malware attempting to evade file-type filtering and manual inspection by using steganography-like naming conventions.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.defense_evasion
+  - attack.t1027.003
+  - attack.execution
+  - attack.t1059.001
+logsource:
+  product: windows
+  category: ps_script
+  service: powershell
+detection:
+  selection_rundll_image:
+    ScriptBlockText:
+      - "*rundll32*.jpg*"
+      - "*rundll32*.png*"
+      - "*rundll32*.gif*"
+      - "*rundll32*.bmp*"
+      - "*rundll32*.jpeg*"
+  selection_icedid_indicators:
+    ScriptBlockText:
+      - "*,init*"
+      - "*,main*"
+      - "*C:\\ProgramData\\*"
+      - "*C:\\Users\\Public\\*"
+  filter_legitimate_apps:
+    ScriptBlockText:
+      - "*Windows\\System32\\Printing_Admin_Scripts*"
+      - "*Program Files\\*"
+      - "*Program Files (x86)\\*"
+  condition: selection_rundll_image and selection_icedid_indicators and not filter_legitimate_apps
+falsepositives:
+  - Legitimate administrative scripts that might use rundll32 to call specific handlers where the parameter accidentally includes an image path
+  - Third-party software installers that use non-standard naming conventions for temporary DLL files during setup
+  - Security auditing tools or scripts performing file integrity checks that happen to reference these strings
+level: high

@@ -1,0 +1,53 @@
+title: Lateral Movement via Remote Services from VPN Appliance
+id: e8470e59-fe5e-482f-a929-2ee8da7a7df4
+status: experimental
+description: Detects successful network (SMB) and remote interactive (RDP) logons originating from VPN appliance management IPs, particularly targeting service or privileged accounts. This indicates lateral movement using compromised credentials following VPN appliance compromise.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.lateral_movement
+  - attack.t1021
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_lateral_protocol:
+    EventID:
+      - 4624
+    LogonType:
+      - 3
+      - 10
+  selection_vpn_source:
+    IpAddress:
+      - 1.1.1.1
+      - 206.189.208.156
+      - 75.145.243.85
+      - 47.207.9.89
+      - 98.160.48.170
+      - 173.220.106.166
+      - 73.128.178.221
+      - 50.243.177.161
+      - 50.213.208.89
+      - 64.24.179.210
+      - 75.145.224.109
+      - 50.215.39.49
+      - 71.127.149.194
+      - 173.53.43.7
+  selection_target_account:
+    TargetUserName:
+      - "*svc*"
+      - "*service*"
+      - "*admin*"
+      - "*sql*"
+      - "*backup*"
+  filter_system_accounts:
+    TargetUserName:
+      - SYSTEM
+      - NETWORK SERVICE
+      - LOCAL SERVICE
+  condition: selection_lateral_protocol and selection_vpn_source and selection_target_account and not filter_system_accounts
+falsepositives:
+  - Authorized service accounts legitimately configured to authenticate via RDP or SMB from VPN management interfaces for administrative purposes
+  - Emergency administrative access from VPN appliance IPs by network operations center (NOC) staff during infrastructure maintenance windows
+level: high

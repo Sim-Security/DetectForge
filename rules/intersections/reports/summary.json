@@ -1,0 +1,61 @@
+{
+  "generatedAt": "2026-02-11T18:30:59.285Z",
+  "inputFile": "elastic-ref-icedid-gziploader.txt",
+  "reportTitle": "# Elastic catches DPRK passing out KANDYKORN",
+  "formats": [
+    "sigma"
+  ],
+  "modelTier": "fast",
+  "summary": {
+    "sigmaRules": 4,
+    "yaraRules": 0,
+    "suricataRules": 0,
+    "totalRules": 4,
+    "validationPassed": 4,
+    "validationFailed": 0,
+    "totalCostUsd": 0.0338,
+    "totalTokens": 25090,
+    "durationMs": 70639
+  },
+  "iocCount": 12,
+  "ttpCount": 5,
+  "attackMappingCount": 5,
+  "rules": [
+    {
+      "format": "sigma",
+      "id": "79584b06-e2c9-46e7-b1ca-38f26f5e4c6e",
+      "title": "Suspicious Network Connection from Python IDE Process",
+      "attackTechniqueId": "T1566.003",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "1b153c2f-4fe5-49a3-934d-4033af8bd196",
+      "title": "Suspicious Network Connection by Python Dropper via Ingress Tool Transfer",
+      "attackTechniqueId": "T1105",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "798b8c2d-93c3-4ee6-96bd-ec53d8d5678d",
+      "title": "Reflective Code Loading via NSCreateObjectFileImageFromMemory Pattern",
+      "attackTechniqueId": "T1620",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "e724aea3-a871-4ad5-b4e5-eb4638d2b4f6",
+      "title": "Discord Execution Flow Hijacking via Malicious Image Load",
+      "attackTechniqueId": "T1574.006",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    }
+  ]
+}

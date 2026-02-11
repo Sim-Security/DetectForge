@@ -1,0 +1,49 @@
+title: Suspicious Rundll32 Execution Pattern via Cobalt Strike
+id: 8466b079-3e11-48cb-879c-9cc4db004f9a
+status: experimental
+description: Detects rundll32.exe being used in a manner consistent with Cobalt Strike's default behavior for process injection and credential dumping, often targeting LSASS or being spawned from suspicious locations. This aligns with observed TTPs where rundll32 is used to facilitate memory dumping or lateral movement.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.credential_access
+  - attack.t1003.001
+  - attack.defense_evasion
+  - attack.t1218.011
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_rundll_behavior:
+    Image:
+      - "*\\rundll32.exe"
+    CommandLine:
+      - "*rundll32.exe"
+      - "*rundll32"
+  selection_suspicious_context:
+    CommandLine:
+      - "*,#1"
+      - "*Control_RunDLL*"
+      - "*C:\\ProgramData\\*"
+      - "*C:\\Users\\Public\\*"
+      - "*AppData\\Roaming\\*"
+    ParentImage:
+      - "*\\cmd.exe"
+      - "*\\powershell.exe"
+      - "*\\wscript.exe"
+      - "*\\cscript.exe"
+      - "*\\mshta.exe"
+  filter_legitimate_system:
+    ParentImage:
+      - "*\\system32\\svchost.exe"
+      - "*\\system32\\services.exe"
+      - "*\\system32\\msiexec.exe"
+    CommandLine:
+      - "*shell32.dll,Control_RunDLL*"
+      - "*aeinv.dll*"
+      - "*update.dll*"
+  condition: selection_rundll_behavior and selection_suspicious_context and not filter_legitimate_system
+falsepositives:
+  - Legitimate administrative scripts using rundll32 to invoke standard Windows DLL exports
+  - Third-party software installers that use rundll32 to register components from temporary directories
+level: high

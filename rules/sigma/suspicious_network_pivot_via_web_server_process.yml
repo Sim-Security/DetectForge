@@ -1,0 +1,50 @@
+title: Suspicious Network Pivot via Web Server Process
+id: b02adaaa-b44b-48c8-8023-600e07d1b321
+status: experimental
+description: Detects network connections initiated by web server processes (w3wp.exe) to internal or unusual destinations, which may indicate the use of tunneling tools like GLASSTOKEN or ReGeorg for multi-hop proxying and lateral movement.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.command_and_control
+  - attack.t1090.003
+  - attack.t1505.003
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_web_process:
+    Image:
+      - "*\\w3wp.exe"
+      - "*\\httpd.exe"
+      - "*\\nginx.exe"
+      - "*\\tomcat.exe"
+  selection_outbound:
+    Initiated:
+      - true
+    DestinationPort:
+      - 21
+      - 22
+      - 23
+      - 135
+      - 139
+      - 445
+      - 3389
+      - 5985
+      - 5986
+  filter_local_dns:
+    DestinationPort:
+      - 53
+    DestinationHostname:
+      - "*localhost*"
+      - "*127.0.0.1*"
+  filter_updates:
+    DestinationHostname:
+      - "*.microsoft.com"
+      - "*.windowsupdate.com"
+      - "*.digicert.com"
+  condition: selection_web_process and selection_outbound and not (filter_local_dns or filter_updates)
+falsepositives:
+  - Web applications designed to act as legitimate proxies or gateways to internal management interfaces.
+  - Server-side scripts or plugins that perform administrative tasks or fetch updates from internal file shares via SMB.
+level: high

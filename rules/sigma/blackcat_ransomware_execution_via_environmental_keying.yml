@@ -1,0 +1,41 @@
+title: BlackCat Ransomware Execution via Environmental Keying
+id: 8fd10a93-7587-460d-904d-9e30ec0f5c76
+status: experimental
+description: Detects the execution of BlackCat (ALPHV) ransomware by identifying specific command-line arguments such as '--access-token'. This is a form of environmental keying used to prevent automated sandbox analysis and ensure only authorized affiliates can trigger the encryption payload.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.defense_evasion
+  - attack.t1480.001
+  - attack.impact
+  - attack.t1486
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_access_token:
+    CommandLine:
+      - "*--access-token*"
+  selection_ransomware_flags:
+    CommandLine:
+      - "*--no-vm-kill*"
+      - "*--no-vm-snapshot*"
+      - "*--ui-path*"
+      - "*--propagate*"
+      - "*--child*"
+  filter_legitimate_tools:
+    Company:
+      - Microsoft Corporation
+      - Google LLC
+      - VMware, Inc.
+    CommandLine:
+      - "*--access-token-file*"
+      - "*gcloud*"
+      - "*kubectl*"
+  condition: (selection_access_token or selection_ransomware_flags) and not filter_legitimate_tools
+falsepositives:
+  - Cloud management CLI tools (like gcloud or kubectl) that might use similar token-based authentication flags in specific scripts.
+  - Internal custom-developed applications that use '--access-token' for legitimate API authentication during automated deployment.
+  - Security testing or breach and attack simulation (BAS) tools mimicking ransomware behavior.
+level: critical

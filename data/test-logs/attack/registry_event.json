@@ -1,0 +1,16 @@
+[
+  {
+    "EventType": "SetValue",
+    "Image": "C:\\Windows\\System32\\reg.exe",
+    "TargetObject": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\\Updater",
+    "Details": "C:\\Users\\Public\\updater.exe",
+    "User": "CORP\\admin"
+  },
+  {
+    "EventType": "SetValue",
+    "Image": "C:\\Users\\Public\\malware.exe",
+    "TargetObject": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\\svchost",
+    "Details": "C:\\Users\\Public\\svchost.exe",
+    "User": "CORP\\jdoe"
+  }
+]

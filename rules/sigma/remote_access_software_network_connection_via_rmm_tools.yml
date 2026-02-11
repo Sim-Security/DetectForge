@@ -1,0 +1,50 @@
+title: Remote Access Software Network Connection via RMM Tools
+id: da0db5e2-ffc7-4272-ad09-61f0f36a6295
+status: experimental
+description: Detects outbound network connections initiated by common Remote Monitoring and Management (RMM) tools like AnyDesk, Quick Assist, and ScreenConnect. Threat actors often use these legitimate tools to maintain command and control after socially engineering victims into installing them.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.command_and_control
+  - attack.t1219
+logsource:
+  product: windows
+  category: network_connection
+detection:
+  selection_rmm_images:
+    Image:
+      - "*\\AnyDesk.exe"
+      - "*\\quickassist.exe"
+      - "*\\ScreenConnect.Client.exe"
+      - "*\\SplashtopDesktop.exe"
+      - "*\\SRService.exe"
+      - "*\\RemoteSupport.exe"
+  selection_network_behavior:
+    Initiated:
+      - true
+    DestinationPort:
+      - 80
+      - 443
+      - 6568
+      - 7070
+      - 44175
+  filter_it_admin_networks:
+    SourceIp:
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+    User:
+      - "*\\Admin*"
+      - NT AUTHORITY\SYSTEM
+  filter_known_hostnames:
+    DestinationHostname:
+      - "*.microsoft.com"
+      - "*.anydesk.com"
+      - "*.screenconnect.com"
+  condition: selection_rmm_images and selection_network_behavior and not (filter_it_admin_networks or filter_known_hostnames)
+falsepositives:
+  - Legitimate use of Quick Assist by internal IT helpdesk for remote troubleshooting of end-user devices.
+  - Authorized third-party vendors using AnyDesk or ScreenConnect to provide support for specific proprietary software.
+  - Automated updates of RMM clients initiated by the system account.
+level: high

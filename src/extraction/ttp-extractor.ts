@@ -55,30 +55,41 @@ export async function extractTtps(
 ): Promise<TtpExtractionResult> {
   const {
     modelTier = 'standard',
-    maxTokens = 4096,
+    maxTokens = 16384,
     temperature = 0.1,
     maxRetries = 3,
   } = options;
 
-  // Truncate very long reports to stay within token limits
-  const maxChars = 30_000;
+  // Truncate very long reports to stay within context limits
+  // Modern models handle 200K+ tokens; 100K chars ≈ ~25K tokens — well within limits
+  const maxChars = 100_000;
   const truncatedText = reportText.length > maxChars
     ? reportText.substring(0, maxChars) + '\n\n[... report truncated for processing ...]'
     : reportText;
 
   const { system, user } = buildTtpExtractionPrompt(truncatedText);
 
-  const result = await withRetry(
-    () => client.prompt(system, user, {
-      model: modelTier,
-      maxTokens,
-      temperature,
-      jsonMode: true,
-    }),
-    { maxRetries },
+  // Wrap both the API call and response parsing in retry so that
+  // malformed/truncated JSON responses trigger a retry.
+  const { parsed, usage } = await withRetry(
+    async () => {
+      const result = await client.prompt(system, user, {
+        model: modelTier,
+        maxTokens,
+        temperature,
+        jsonMode: true,
+      });
+      return { parsed: parseTtpResponse(result.content), usage: result.usage };
+    },
+    {
+      maxRetries,
+      isRetryable: (err) => {
+        // Retry on validation failures (malformed AI output) in addition to defaults
+        if (err instanceof Error && err.message.includes('validation failed')) return true;
+        return undefined; // fall through to default check
+      },
+    },
   );
-
-  const parsed = parseTtpResponse(result.content);
 
   // Map parsed response to ExtractedTTP objects
   const ttps: ExtractedTTP[] = parsed.ttps.map(ttp => ({
@@ -94,5 +105,5 @@ export async function extractTtps(
     confidence: ttp.confidence,
   }));
 
-  return { ttps, usage: result.usage };
+  return { ttps, usage };
 }

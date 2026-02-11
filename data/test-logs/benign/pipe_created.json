@@ -1,0 +1,12 @@
+[
+  {
+    "PipeName": "\\lsass",
+    "Image": "C:\\Windows\\System32\\lsass.exe",
+    "User": "NT AUTHORITY\\SYSTEM"
+  },
+  {
+    "PipeName": "\\chrome.12345.0.123456789",
+    "Image": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "User": "CORP\\user1"
+  }
+]

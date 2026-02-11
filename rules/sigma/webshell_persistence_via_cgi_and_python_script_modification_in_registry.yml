@@ -1,0 +1,37 @@
+title: Webshell Persistence via CGI and Python Script Modification in Registry
+id: 0e7180ca-928d-4fc4-8dff-9c64002e4fad
+status: experimental
+description: Detects potential persistence via web shell injection by monitoring registry modifications to paths associated with CGI and Python web components. Attackers may modify legitimate files like compcheckresult.cgi or visits.py to execute arbitrary commands, which can be reflected in configuration or file integrity monitoring keys stored in the registry.
+author: DetectForge
+date: 2026/02/11
+modified: 2026/02/11
+tags:
+  - attack.persistence
+  - attack.t1505.003
+logsource:
+  product: windows
+  category: registry_set
+detection:
+  selection_web_component:
+    TargetObject:
+      - "*\\dana-na\\auth\\compcheckresult.cgi*"
+      - "*\\api\\v1\\cav\\client\\visits*"
+      - "*\\visits.py*"
+  selection_suspicious_content:
+    Details:
+      - "*eval(*"
+      - "*system(*"
+      - "*base64_decode*"
+      - "*python -c*"
+      - "*perl -e*"
+  filter_legitimate_updates:
+    Image:
+      - C:\Windows\System32\msiexec.exe
+      - C:\Windows\System32\wbem\WmiPrvSE.exe
+    User:
+      - NT AUTHORITY\SYSTEM
+  condition: selection_web_component and selection_suspicious_content and not filter_legitimate_updates
+falsepositives:
+  - Security software or File Integrity Monitoring (FIM) agents updating their internal database or configuration registry keys.
+  - Legitimate administrative updates to web server configuration files that include complex scripts or encoded strings.
+level: high

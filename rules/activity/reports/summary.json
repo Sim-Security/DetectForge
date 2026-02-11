@@ -1,0 +1,72 @@
+{
+  "generatedAt": "2026-02-11T18:33:49.092Z",
+  "inputFile": "cisa-aa22-277a.txt",
+  "reportTitle": "# Impacket and Exfiltration Tool Used to Steal Sensitive Information",
+  "formats": [
+    "sigma"
+  ],
+  "modelTier": "fast",
+  "summary": {
+    "sigmaRules": 5,
+    "yaraRules": 0,
+    "suricataRules": 0,
+    "totalRules": 5,
+    "validationPassed": 5,
+    "validationFailed": 0,
+    "totalCostUsd": 0.0372,
+    "totalTokens": 28558,
+    "durationMs": 30035
+  },
+  "iocCount": 14,
+  "ttpCount": 5,
+  "attackMappingCount": 5,
+  "rules": [
+    {
+      "format": "sigma",
+      "id": "366477ff-d35f-48a9-a502-a6ba980ba708",
+      "title": "Lateral Movement via Impacket Tools (WMI/SMB) Network Connection",
+      "attackTechniqueId": "T1021.006",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "26b42320-ee3d-452a-81d1-5be8e440bf3f",
+      "title": "Exfiltration to OneDrive via Non-Standard Process",
+      "attackTechniqueId": "T1567.002",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "1fd4d706-c496-4b32-8dc4-78839b251bd9",
+      "title": "Persistence via China Chopper Webshell Registry Modification",
+      "attackTechniqueId": "T1505.003",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "3924263b-c51f-4023-80fa-70b6c408d4f9",
+      "title": "Masquerading WinRAR as VMware Utility",
+      "attackTechniqueId": "T1036.003",
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "format": "sigma",
+      "id": "a515dd85-807b-4b4f-abd1-86bfcd6e6c9d",
+      "title": "Exchange Application Impersonation Role Assignment via Management Role",
+      "attackTechniqueId": "T1098.002",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "Detection field \"EventID\" is not known for logsource product=\"windows\", category=\"\""
+      ]
+    }
+  ]
+}
