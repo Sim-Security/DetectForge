@@ -1,10 +1,10 @@
-title: Suspicious NTDS Database Compression via 7-Zip from Mounted VHD
+title: Suspicious NTDS Database Extraction via Archive Tools or Native Utilities
 id: 95fa95ae-8c80-49b6-bf6d-ab4b53fcfa13
 status: experimental
-description: Detects the compression of Active Directory database files (ntds.dit) using 7-Zip or similar archiving tools, particularly when sourced from mounted Virtual Hard Disk (VHD/VHDX) backups. This technique is associated with credential dumping from domain controller backup images where attackers mount VHD files to extract and compress the NTDS database for exfiltration.
+description: Detects attempts to extract the Active Directory database (ntds.dit) using archive tools (7-Zip, WinRAR), VHD mounting, ntdsutil IFM creation, or Volume Shadow Copy. Attackers use these techniques to dump domain credentials from domain controllers.
 author: DetectForge
 date: 2026/02/11
-modified: 2026/02/11
+modified: 2026/02/12
 tags:
   - attack.credential_access
   - attack.t1003.003
@@ -30,6 +30,14 @@ detection:
       - "*.vhd*"
       - "*.vhdx*"
       - "*Mount-DiskImage*"
+  selection_ntdsutil:
+    Image|endswith: "\\ntdsutil.exe"
+    CommandLine|contains:
+      - "ifm"
+      - "create full"
+  selection_vssadmin:
+    Image|endswith: "\\vssadmin.exe"
+    CommandLine|contains: "create shadow"
   filter_system_process:
     ParentImage:
       - "*\\svchost.exe"
@@ -38,7 +46,7 @@ detection:
     ParentImage:
       - "*\\wbengine.exe"
       - "*\\vssvc.exe"
-  condition: (selection_archiver or selection_mount) and not filter_system_process and not filter_backup_engine
+  condition: (selection_archiver or selection_mount or selection_ntdsutil or selection_vssadmin) and not filter_system_process and not filter_backup_engine
 falsepositives:
   - Legitimate disaster recovery operations where administrators mount VHD backups to extract specific files including Active Directory databases for testing purposes
   - Backup software agents that temporarily mount virtual disk images to perform file-level recovery operations

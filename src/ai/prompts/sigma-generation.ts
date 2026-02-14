@@ -106,9 +106,10 @@ export function buildSigmaGenerationPrompt(
   template: SigmaTemplate,
   iocs: ExtractedIOC[],
   referenceRules?: SigmaReferenceRule[],
+  behavioralFeedback?: string,
 ): { system: string; user: string } {
   const system = buildSystemPrompt(template, referenceRules);
-  const user = buildUserPrompt(ttp, mapping, template, iocs);
+  const user = buildUserPrompt(ttp, mapping, template, iocs, behavioralFeedback);
   return { system, user };
 }
 
@@ -173,6 +174,10 @@ ${fieldsBlock}
 
 This is a HARD CONSTRAINT. Using fields outside this list will cause the rule to fail validation. For example, do NOT use \`EventID\` in a process_creation logsource — it does not exist there. Do NOT use \`IpAddress\` in a process_creation logsource.
 
+WARNING: OriginalFileName, Company, Product, and Description are PE metadata fields.
+They are trivially spoofable by attackers and absent in many log sources.
+Use them ONLY as supplementary filters, NEVER as primary selection criteria.
+
 ## Detection Quality Requirements
 
 ### 1. MANDATORY: Include Filter/Exclusion Block
@@ -191,6 +196,38 @@ IOCs may be used to ENRICH behavioral detections (e.g. as additional selection c
 
 ### 3. MANDATORY: Multiple Selection Blocks
 Use at least 2 named selection blocks to create layered detection logic. Single-selection rules are too broad.
+
+## BAD vs GOOD Detection Patterns
+
+BAD: Tool-signature detection (attacker renames binary and rule breaks):
+  selection: { Image: "*\\\\mimikatz.exe" }
+
+GOOD: OS-behavior detection (works regardless of tool):
+  selection_target: { "TargetImage|endswith": "\\\\lsass.exe" }
+  selection_access: { GrantedAccess: ["0x1010", "0x1038", "0x1fffff"] }
+
+BAD: Single technique variant
+  selection: { CommandLine: "*sekurlsa::logonpasswords*" }
+
+GOOD: Multiple variants ORed together
+  selection_comsvcs: { "CommandLine|contains|all": ["comsvcs", "MiniDump"] }
+  selection_procdump: { "CommandLine|contains|all": ["procdump", "lsass"] }
+  selection_generic: { "CommandLine|contains": "lsass" }
+  condition: selection_comsvcs or selection_procdump or selection_generic
+
+BAD: Ignoring ParentCommandLine
+  selection: { "CommandLine|contains": "-encodedcommand" }
+
+GOOD: Checking both CommandLine and ParentCommandLine
+  selection_direct: { "CommandLine|contains": "-enc" }
+  selection_parent: { "ParentCommandLine|contains": "-enc" }
+  condition: selection_direct or selection_parent
+
+## Parent-Child Process Relationships
+When detecting execution techniques (T1059.*), ALWAYS check BOTH
+CommandLine AND ParentCommandLine. Attack frameworks spawn child
+processes; the encoded command appears in the PARENT's command line.
+A rule checking only CommandLine misses 70%+ of real attack data.
 
 ## Example Detection Block
 
@@ -245,6 +282,7 @@ function buildUserPrompt(
   mapping: AttackMappingResult,
   template: SigmaTemplate,
   iocs: ExtractedIOC[],
+  behavioralFeedback?: string,
 ): string {
   const toolsList = ttp.tools.length > 0
     ? ttp.tools.join(', ')
@@ -284,9 +322,13 @@ function buildUserPrompt(
 
 ${ttp.description}
 
-## Tools Used
+## Tools Used (context only — DO NOT detect by tool filename)
 
 ${toolsList}
+
+IMPORTANT: Tool names describe what the attacker used. Your rule must NOT
+rely on tool filenames. Attackers rename tools, load in-memory, or use
+LOLBins. Detect the TECHNIQUE BEHAVIOR, not the tool binary.
 
 ## Artifacts Observed
 
@@ -320,7 +362,7 @@ ${fieldsBlock}
 8. The \`tags\` array MUST include the tactic as \`attack.<tactic>\` and the technique as \`attack.t<id>\` (lowercase).
 9. IOCs may ENRICH behavioral selections (e.g. known tool names in CommandLine) but must NOT be the sole detection logic.
 
-Respond with ONLY the JSON object.`;
+Respond with ONLY the JSON object.${behavioralFeedback ? `\n\n---\n\n${behavioralFeedback}` : ''}`;
 }
 
 /**

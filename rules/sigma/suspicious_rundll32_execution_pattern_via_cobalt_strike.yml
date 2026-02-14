@@ -15,11 +15,7 @@ logsource:
   category: process_creation
 detection:
   selection_rundll_behavior:
-    Image:
-      - "*\\rundll32.exe"
-    CommandLine:
-      - "*rundll32.exe"
-      - "*rundll32"
+    Image|endswith: "\\rundll32.exe"
   selection_suspicious_context:
     CommandLine:
       - "*,#1"
@@ -27,6 +23,9 @@ detection:
       - "*C:\\ProgramData\\*"
       - "*C:\\Users\\Public\\*"
       - "*AppData\\Roaming\\*"
+      - "*comsvcs*"
+      - "*MiniDump*"
+      - "*minidump*"
     ParentImage:
       - "*\\cmd.exe"
       - "*\\powershell.exe"

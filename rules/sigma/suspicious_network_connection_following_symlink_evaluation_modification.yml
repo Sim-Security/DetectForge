@@ -1,40 +1,44 @@
-title: Suspicious Network Connection Following Symlink Evaluation Modification
+title: Suspicious Remote Symlink Evaluation Modification via Fsutil
 id: c8160424-2860-47dc-b550-59a7eac0a5e8
 status: experimental
-description: Detects network connections initiated by processes commonly associated with the modification of symbolic link evaluation settings (R2L/R2R). Attackers, such as BlackCat ransomware operators, use fsutil to enable remote symlink evaluation to traverse and encrypt files across network shares. This rule monitors for outbound network activity from the fsutil utility or processes running from suspicious paths after such configurations are typically applied.
+description: >
+  Detects fsutil.exe being used to modify symbolic link evaluation settings,
+  specifically enabling remote-to-local (R2L) or remote-to-remote (R2R)
+  symlink evaluation. Attackers such as BlackCat ransomware operators enable
+  remote symlinks to traverse and encrypt files across network shares.
+  This is a process_creation rule detecting the fsutil execution itself,
+  not the subsequent network activity.
 author: DetectForge
 date: 2026/02/11
-modified: 2026/02/11
+modified: 2026/02/12
 tags:
-  - attack.exfiltration
-  - attack.t1537
+  - attack.defense_evasion
+  - attack.t1562
   - attack.lateral_movement
   - attack.t1021.002
 logsource:
   product: windows
-  category: network_connection
+  category: process_creation
 detection:
-  selection_tools:
-    Image:
-      - "*\\fsutil.exe"
-    Initiated:
-      - true
-  selection_ports:
-    DestinationPort:
-      - 139
-      - 445
-      - 5985
-      - 5986
-    Protocol: tcp
-  filter_system_processes:
+  selection_fsutil:
+    Image|endswith: "\\fsutil.exe"
+    CommandLine|contains|all:
+      - "behavior"
+      - "symlink"
+  selection_enable_remote:
+    CommandLine|contains:
+      - "set SymlinkEvaluation R2L:1"
+      - "set SymlinkEvaluation R2R:1"
+      - "SymlinkEvaluation R2L:1"
+      - "SymlinkEvaluation R2R:1"
+  filter_system:
+    ParentImage|endswith:
+      - "\\svchost.exe"
+      - "\\services.exe"
     User:
-      - NT AUTHORITY\SYSTEM
-      - NT AUTHORITY\NETWORK SERVICE
-    DestinationHostname:
-      - "*.microsoft.com"
-      - "*.windowsupdate.com"
-  condition: selection_tools and selection_ports and not filter_system_processes
+      - "NT AUTHORITY\\SYSTEM"
+  condition: selection_fsutil and selection_enable_remote and not filter_system
 falsepositives:
-  - Administrative activity where fsutil is used to troubleshoot filesystem issues or verify network share connectivity.
-  - Storage management software or backup agents that utilize fsutil for volume analysis and communicate over SMB/RPC.
+  - Administrative activity where symlink evaluation is modified for legitimate file share access
+  - Storage migration scripts that temporarily enable remote symlink evaluation
 level: high

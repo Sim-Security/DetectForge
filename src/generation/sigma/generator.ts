@@ -25,7 +25,7 @@ import { buildSigmaGenerationPrompt, parseSigmaAIResponse } from '@/ai/prompts/s
 import type { SigmaAIResponse } from '@/ai/prompts/sigma-generation.js';
 import { getTemplate, getSuggestedCategory } from './templates.js';
 import type { SigmaTemplate } from './templates.js';
-import { validateSigmaRule } from './validator.js';
+import { analyzeToolSignatureDependence } from '@/testing/quality-scorer.js';
 
 // ---------------------------------------------------------------------------
 // Public Types
@@ -153,7 +153,16 @@ export async function generateSigmaRules(
 // ---------------------------------------------------------------------------
 
 /**
+ * Maximum number of behavioral quality retries before accepting best attempt.
+ */
+const MAX_BEHAVIORAL_RETRIES = 2;
+
+/**
  * Generate a single Sigma rule for one TTP + template combination.
+ *
+ * If the initial rule relies on tool-specific filenames without behavioral
+ * fields, the generator retries up to {@link MAX_BEHAVIORAL_RETRIES} times
+ * with explicit behavioral feedback appended to the prompt.
  */
 async function generateSingleRule(
   client: AIClient,
@@ -163,36 +172,97 @@ async function generateSingleRule(
   iocs: ExtractedIOC[],
   opts: Required<SigmaGenerationOptions>,
 ): Promise<{ rule: SigmaRule | null; usage: APIUsage }> {
-  const { system, user } = buildSigmaGenerationPrompt(ttp, mapping, template, iocs);
+  let bestRule: SigmaRule | null = null;
+  const usageEntries: APIUsage[] = [];
 
-  const result = await withRetry(
-    () =>
-      client.prompt(system, user, {
-        model: opts.modelTier,
-        maxTokens: opts.maxTokens,
-        temperature: opts.temperature,
-      }),
-    { maxRetries: opts.maxRetries },
-  );
+  for (let attempt = 0; attempt <= MAX_BEHAVIORAL_RETRIES; attempt++) {
+    const feedback = attempt > 0 && bestRule
+      ? buildBehavioralFeedback(bestRule)
+      : undefined;
 
-  let aiResponse: SigmaAIResponse;
-  try {
-    aiResponse = parseSigmaAIResponse(result.content);
-  } catch {
-    return { rule: null, usage: result.usage };
+    const { system, user } = buildSigmaGenerationPrompt(
+      ttp, mapping, template, iocs, undefined, feedback,
+    );
+
+    const result = await withRetry(
+      () =>
+        client.prompt(system, user, {
+          model: opts.modelTier,
+          maxTokens: opts.maxTokens,
+          temperature: opts.temperature,
+        }),
+      { maxRetries: opts.maxRetries },
+    );
+
+    usageEntries.push(result.usage);
+
+    let aiResponse: SigmaAIResponse;
+    try {
+      aiResponse = parseSigmaAIResponse(result.content);
+    } catch {
+      if (bestRule) break; // Return best previous attempt
+      return { rule: null, usage: aggregateUsage(usageEntries) };
+    }
+
+    const rule = buildSigmaRule(aiResponse, mapping, opts.author);
+    bestRule = rule;
+
+    // Check behavioral quality — if acceptable, return immediately
+    const quality = assessBehavioralQuality(rule);
+    if (quality.acceptable) {
+      return { rule, usage: aggregateUsage(usageEntries) };
+    }
+
+    // Otherwise continue retry loop with feedback
   }
 
-  const rule = buildSigmaRule(aiResponse, mapping, opts.author);
+  // After max retries, return best attempt
+  return { rule: bestRule, usage: aggregateUsage(usageEntries) };
+}
 
-  // Run validation — attach warnings but still return the rule
-  const validation = validateSigmaRule(rule);
-  if (!validation.valid) {
-    // If there are hard errors we still return the rule so callers can
-    // inspect it, but downstream consumers should check validation.
-    return { rule, usage: result.usage };
+/**
+ * Assess whether a rule's detection logic meets behavioral quality standards.
+ *
+ * Rejects rules whose primary detection relies solely on tool-specific
+ * filenames with no behavioral fields (GrantedAccess, CallTrace, etc.).
+ */
+export function assessBehavioralQuality(rule: SigmaRule): {
+  acceptable: boolean;
+  reasons: string[];
+} {
+  const analysis = analyzeToolSignatureDependence(rule);
+  const reasons: string[] = [];
+
+  if (analysis.primaryIsToolSignature && !analysis.hasBehavioralFields) {
+    reasons.push(
+      `Primary detection relies on tool-specific filename only (${analysis.toolNames.join(', ')})`,
+    );
   }
 
-  return { rule, usage: result.usage };
+  if (analysis.detectionVariantCount < 2 && !analysis.hasBehavioralFields) {
+    reasons.push('Single variant with no behavioral fields');
+  }
+
+  return { acceptable: reasons.length === 0, reasons };
+}
+
+/**
+ * Build behavioral feedback text to append to the user prompt when a
+ * previous attempt was rejected for tool-signature dependence.
+ */
+export function buildBehavioralFeedback(failedRule: SigmaRule): string {
+  const analysis = analyzeToolSignatureDependence(failedRule);
+  return [
+    'BEHAVIORAL FEEDBACK: Your previous rule was rejected.',
+    `Reason: Primary detection relies on tool-specific filenames (${analysis.toolNames.join(', ')}).`,
+    'Rewrite using behavioral OS indicators:',
+    '- GrantedAccess masks for memory access patterns',
+    '- ParentImage/ParentCommandLine for process relationships',
+    '- CallTrace for injection detection',
+    '- TargetObject for registry targeting',
+    '- CommandLine argument patterns (not tool filenames)',
+    'The rule must detect the TECHNIQUE, not the TOOL.',
+  ].join('\n');
 }
 
 /**

@@ -302,6 +302,56 @@ const templates: ReadonlyMap<string, SigmaTemplate> = new Map([
     },
   ],
   [
+    'process_access',
+    {
+      category: 'process_access',
+      logsource: { product: 'windows', category: 'process_access' },
+      availableFields: [
+        'SourceImage',
+        'TargetImage',
+        'GrantedAccess',
+        'CallTrace',
+        'SourceUser',
+        'TargetUser',
+      ],
+      commonFalsePositives: [
+        'Antivirus and EDR products accessing process memory',
+        'System processes performing routine process queries',
+        'Debugging tools used by developers',
+      ],
+      exampleDetection: {
+        selection_target: { 'TargetImage|endswith': '\\lsass.exe' },
+        selection_access: { GrantedAccess: ['0x1010', '0x1fffff'] },
+        filter_system: { SourceImage: ['*\\csrss.exe', '*\\services.exe'] },
+        condition: 'selection_target and selection_access and not filter_system',
+      },
+    },
+  ],
+  [
+    'create_remote_thread',
+    {
+      category: 'create_remote_thread',
+      logsource: { product: 'windows', category: 'create_remote_thread' },
+      availableFields: [
+        'SourceImage',
+        'TargetImage',
+        'StartAddress',
+        'StartModule',
+        'StartFunction',
+      ],
+      commonFalsePositives: [
+        'Software updaters injecting into running processes',
+        'Antivirus hooking system processes',
+        'Game anti-cheat software',
+      ],
+      exampleDetection: {
+        selection: { SourceImage: ['*\\powershell.exe'], StartFunction: 'LoadLibraryA' },
+        filter_known: { SourceImage: ['*\\csrss.exe', '*\\svchost.exe'] },
+        condition: 'selection and not filter_known',
+      },
+    },
+  ],
+  [
     'security',
     {
       category: 'security',
@@ -392,8 +442,8 @@ const TECHNIQUE_TO_CATEGORIES: ReadonlyMap<string, string[]> = new Map([
   ['T1053.005', ['security']],
 
   // Privilege Escalation
-  ['T1055', ['process_creation', 'image_load']],
-  ['T1055.001', ['process_creation']],
+  ['T1055', ['process_creation', 'image_load', 'create_remote_thread']],
+  ['T1055.001', ['process_creation', 'create_remote_thread']],
   ['T1055.012', ['process_creation']],
   ['T1134', ['security', 'process_creation']],
 
@@ -418,8 +468,8 @@ const TECHNIQUE_TO_CATEGORIES: ReadonlyMap<string, string[]> = new Map([
   ['T1140', ['process_creation', 'ps_script']],
 
   // Credential Access
-  ['T1003', ['process_creation', 'security']],
-  ['T1003.001', ['process_creation', 'security']],
+  ['T1003', ['process_creation', 'security', 'process_access']],
+  ['T1003.001', ['process_creation', 'security', 'process_access']],
   ['T1003.006', ['security']],
   ['T1110', ['security']],
   ['T1558', ['security']],

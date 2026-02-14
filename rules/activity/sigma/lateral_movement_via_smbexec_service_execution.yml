@@ -1,0 +1,48 @@
+title: Lateral Movement via SMBExec Service Command Execution
+id: 4a7d8c92-e5f3-4b01-c987-6543abcd2109
+status: experimental
+description: >
+  Detects the pattern of services.exe spawning cmd.exe with encoded or
+  base64-like commands, indicative of Empire's Invoke-SMBExec or similar
+  lateral movement tools that create remote services to execute commands
+  on target systems. The child cmd.exe typically pipes output to a temp file.
+author: DetectForge
+date: 2026/02/12
+tags:
+  - attack.lateral_movement
+  - attack.t1021.002
+  - attack.execution
+  - attack.t1569.002
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_parent:
+    ParentImage|endswith: "\\services.exe"
+  selection_child:
+    Image|endswith:
+      - "\\cmd.exe"
+      - "\\powershell.exe"
+      - "\\pwsh.exe"
+  selection_indicators:
+    CommandLine|contains:
+      - "echo"
+      - "/Q /c"
+      - "/c "
+      - "-enc"
+      - "-encodedcommand"
+      - "\\Windows\\Temp\\"
+      - "^>"
+      - "whoami"
+      - "ipconfig"
+      - "systeminfo"
+  filter_legitimate_services:
+    CommandLine|contains:
+      - "\\Windows\\servicing\\"
+      - "Windows\\CCM\\"
+      - "ProgramData\\Microsoft\\"
+  condition: selection_parent and selection_child and selection_indicators and not filter_legitimate_services
+falsepositives:
+  - Legitimate Windows services that spawn command shells for maintenance tasks
+  - SCCM or other management software executing scripts via service context
+level: high

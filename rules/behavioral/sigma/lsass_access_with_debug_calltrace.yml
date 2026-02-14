@@ -1,0 +1,46 @@
+title: LSASS Access with Debug DLL or Injected Code in CallTrace
+id: 9b8c4d12-e2f3-4a67-b901-2345bcde6789
+status: experimental
+description: >
+  Detects LSASS memory access where the CallTrace contains debug DLLs
+  (dbgcore.dll, dbghelp.dll) or UNKNOWN entries indicating injected code.
+  This catches in-memory credential dumping where tools like Mimikatz are
+  loaded via PowerShell reflective injection (no file on disk).
+author: DetectForge
+date: 2026/02/11
+tags:
+  - attack.credential_access
+  - attack.t1003.001
+logsource:
+  product: windows
+  category: process_access
+detection:
+  selection_target:
+    TargetImage|endswith: "\\lsass.exe"
+  selection_calltrace_debug:
+    CallTrace|contains:
+      - "dbgcore.dll"
+      - "dbghelp.dll"
+  selection_calltrace_injected:
+    CallTrace|contains: "UNKNOWN"
+  selection_calltrace_clr:
+    CallTrace|contains:
+      - "mscoree.dll"
+      - "clr.dll"
+      - "clrjit.dll"
+  filter_system_processes:
+    SourceImage:
+      - "C:\\Windows\\system32\\svchost.exe"
+      - "C:\\Windows\\system32\\wbem\\wmiprvse.exe"
+      - "C:\\Windows\\system32\\csrss.exe"
+  filter_av_edr:
+    SourceImage|contains:
+      - "\\Windows Defender\\"
+      - "\\CrowdStrike\\"
+      - "\\Carbon Black\\"
+      - "\\Symantec\\"
+  condition: selection_target and (selection_calltrace_debug or selection_calltrace_injected or selection_calltrace_clr) and not filter_system_processes and not filter_av_edr
+falsepositives:
+  - Debugging tools (Visual Studio, WinDbg) attached to processes
+  - Crash dump utilities invoked by Windows Error Reporting
+level: critical

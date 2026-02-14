@@ -1,0 +1,25 @@
+title: LSASS Memory Access via Task Manager
+id: c0b945e4-2be0-49cc-82e2-4ad4a7f554d7
+status: experimental
+description: Detects Task Manager accessing LSASS process memory with debug privileges, a method used to create memory dumps for offline credential extraction.
+author: DetectForge
+date: 2026/02/12
+tags:
+  - attack.credential_access
+  - attack.t1003.001
+logsource:
+  product: windows
+  category: process_access
+detection:
+  selection:
+    SourceImage|endswith: "\\taskmgr.exe"
+    TargetImage|endswith: "\\lsass.exe"
+    GrantedAccess:
+      - "0x1fffff"
+      - "0x1410"
+      - "0x1010"
+      - "0x1038"
+  condition: selection
+falsepositives:
+  - Task Manager legitimately querying LSASS process information in environments with enhanced process monitoring
+level: high

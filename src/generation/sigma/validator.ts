@@ -10,6 +10,7 @@
 import YAML from 'yaml';
 import { validateSigmaLogsource } from '@/knowledge/logsource-catalog/index.js';
 import { validateRuleFields } from '@/testing/field-validator.js';
+import { analyzeToolSignatureDependence } from '@/testing/quality-scorer.js';
 import type { SigmaRule, ValidationResult } from '@/types/detection-rule.js';
 
 // ---------------------------------------------------------------------------
@@ -179,6 +180,12 @@ export function validateSigmaRule(rule: SigmaRule): ValidationResult {
     warnings.push('Rule has no false-positive entries. Consider documenting known FPs.');
   }
 
+  // --- Behavioral quality warnings ---
+  // Only check behavioral quality when detection exists and has a string condition
+  if (rule.detection && rule.logsource && typeof rule.detection.condition === 'string') {
+    warnings.push(...checkBehavioralQuality(rule));
+  }
+
   return {
     valid: errors.length === 0,
     syntaxValid: errors.length === 0,
@@ -186,6 +193,34 @@ export function validateSigmaRule(rule: SigmaRule): ValidationResult {
     errors,
     warnings,
   };
+}
+
+/**
+ * Check behavioral quality of a Sigma rule's detection logic.
+ *
+ * These are warnings (not errors) — they surface potential evasion
+ * vulnerabilities but don't prevent the rule from being valid.
+ */
+function checkBehavioralQuality(rule: SigmaRule): string[] {
+  const warnings: string[] = [];
+  const analysis = analyzeToolSignatureDependence(rule);
+
+  if (analysis.primaryIsToolSignature) {
+    warnings.push(
+      'Primary detection relies on tool-specific filename' +
+      (analysis.toolNames.length > 0 ? ` (${analysis.toolNames.join(', ')})` : '') +
+      '. Consider behavioral fields (GrantedAccess, CallTrace, ParentImage).',
+    );
+  }
+
+  if (!analysis.hasBehavioralFields && analysis.detectionVariantCount < 2) {
+    warnings.push(
+      'No behavioral fields and single detection variant. ' +
+      'Rule is vulnerable to evasion via tool renaming.',
+    );
+  }
+
+  return warnings;
 }
 
 /**

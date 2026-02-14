@@ -60,6 +60,8 @@ const ALL_CATEGORIES = [
   'pipe_created',
   'wmi_event',
   'ps_script',
+  'process_access',
+  'create_remote_thread',
   'security',
 ] as const;
 
@@ -95,9 +97,9 @@ describe('getTemplate', () => {
 // ===========================================================================
 
 describe('getAllTemplates', () => {
-  it('returns exactly 10 templates', () => {
+  it('returns exactly 12 templates', () => {
     const templates = getAllTemplates();
-    expect(templates).toHaveLength(10);
+    expect(templates).toHaveLength(12);
   });
 
   it('returns an array of SigmaTemplate objects', () => {

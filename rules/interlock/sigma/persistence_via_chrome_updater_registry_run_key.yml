@@ -1,7 +1,11 @@
 title: Persistence via Chrome Updater Registry Run Key
 id: 12700bbc-d2ce-40bb-bd43-937ce24c82a4
 status: experimental
-description: Detects the creation of a suspicious 'Chrome Updater' registry value within the Windows Run keys, a technique used by Interlock malware and other threat actors to establish persistence. This specific implementation often points to non-standard files like .log files or malicious executables to ensure automatic execution upon user logon.
+description: >
+  Detects suspicious registry Run key modifications used for persistence,
+  including Chrome Updater impersonation, suspicious Run key values containing
+  PowerShell, encoded commands, or references to unusual file paths, and
+  Run key modifications by suspicious source processes.
 author: DetectForge
 date: 2026/02/11
 modified: 2026/02/11
@@ -12,22 +16,62 @@ logsource:
   product: windows
   category: registry_set
 detection:
-  selection_key_name:
+  selection_chrome_impersonation:
     TargetObject:
       - "*\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\Chrome Updater"
       - "*\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\Chrome"
+  selection_run_key:
+    TargetObject|contains: "\\CurrentVersion\\Run\\"
   selection_suspicious_details:
     Details:
       - "*.log*"
       - "*.tmp*"
       - "*AppData\\Local\\Temp\\*"
       - "*C:\\Users\\Public\\*"
+      - "*\\AppData\\Roaming\\*"
+      - "*%APPDATA%*"
+      - "*%TEMP%*"
+      - "*%PUBLIC%*"
+  selection_suspicious_cmd:
+    Details|contains:
+      - "powershell"
+      - "-enc "
+      - "-encodedcommand"
+      - "IEX"
+      - "-W hidden"
+      - "-WindowStyle hidden"
+      - "FromBase64String"
+      - "downloadstring"
+      - "cmd /c"
+      - "cmd.exe /c"
+      - "rundll32"
+      - "regsvr32"
+      - "mshta"
+      - "wscript"
+      - "cscript"
+  selection_suspicious_source:
+    Image|endswith:
+      - "\\powershell.exe"
+      - "\\pwsh.exe"
+      - "\\cmd.exe"
+      - "\\mshta.exe"
+      - "\\wscript.exe"
+      - "\\cscript.exe"
+      - "\\rundll32.exe"
+      - "\\regsvr32.exe"
   filter_legitimate_chrome:
     Details:
       - "*\\Google\\Chrome\\Application\\chrome.exe*"
       - "*\\Google\\Update\\GoogleUpdate.exe*"
-  condition: selection_key_name and (selection_suspicious_details or not filter_legitimate_chrome)
+  filter_legitimate_programs:
+    Details:
+      - "*\\Program Files\\*"
+      - "*\\Program Files (x86)\\*"
+      - "*\\Windows Defender\\*"
+      - "*\\Microsoft\\OneDrive\\*"
+  condition: (selection_chrome_impersonation and not filter_legitimate_chrome) or (selection_run_key and (selection_suspicious_details or selection_suspicious_cmd or selection_suspicious_source) and not filter_legitimate_programs)
 falsepositives:
-  - Legitimate software updates that might use similar naming conventions (though Google Chrome typically uses 'Google Update' or 'Gupdate')
-  - Administrative scripts intentionally named to blend in with system processes
+  - Legitimate software updates using similar naming conventions
+  - Administrative scripts that set Run key values with PowerShell paths
+  - Software installers using scripting engines to configure autorun entries
 level: high

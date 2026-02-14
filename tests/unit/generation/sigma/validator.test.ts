@@ -554,6 +554,71 @@ describe('validateSigmaRule', () => {
 });
 
 // ===========================================================================
+// Behavioral quality warnings
+// ===========================================================================
+
+describe('behavioral quality warnings', () => {
+  it('warns when primary detection uses tool-specific filename', () => {
+    const rule = makeValidRule({
+      detection: {
+        selection: { Image: '*\\mimikatz.exe' },
+        condition: 'selection',
+      },
+    });
+    const result = validateSigmaRule(rule);
+    expect(result.warnings).toEqual(
+      expect.arrayContaining([expect.stringContaining('tool-specific filename')]),
+    );
+  });
+
+  it('warns when single variant with no behavioral fields', () => {
+    const rule = makeValidRule({
+      detection: {
+        selection: { 'CommandLine|contains': 'some_value' },
+        condition: 'selection',
+      },
+    });
+    const result = validateSigmaRule(rule);
+    expect(result.warnings).toEqual(
+      expect.arrayContaining([expect.stringContaining('single detection variant')]),
+    );
+  });
+
+  it('does NOT warn for rule with behavioral fields', () => {
+    const rule = makeValidRule({
+      detection: {
+        selection_target: { 'TargetImage|endswith': '\\lsass.exe' },
+        selection_access: { GrantedAccess: ['0x1010', '0x1038'] },
+        filter_av: { SourceImage: ['*\\MsMpEng.exe'] },
+        condition: 'selection_target and selection_access and not filter_av',
+      },
+    });
+    const result = validateSigmaRule(rule);
+    expect(
+      result.warnings.filter((w) => w.includes('tool-specific filename')),
+    ).toHaveLength(0);
+    expect(
+      result.warnings.filter((w) => w.includes('single detection variant')),
+    ).toHaveLength(0);
+  });
+
+  it('does NOT warn for multi-variant rule', () => {
+    const rule = makeValidRule({
+      detection: {
+        selection_a: { 'CommandLine|contains': '-enc' },
+        selection_b: { 'ParentCommandLine|contains': '-enc' },
+        selection_c: { 'CommandLine|contains': 'downloadstring' },
+        condition: 'selection_a or selection_b or selection_c',
+      },
+    });
+    const result = validateSigmaRule(rule);
+    expect(
+      result.warnings.filter((w) => w.includes('single detection variant')),
+    ).toHaveLength(0);
+  });
+});
+
+// ===========================================================================
 // validateSigmaYaml
 // ===========================================================================
 

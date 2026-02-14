@@ -1,0 +1,57 @@
+title: Suspicious Encoded PowerShell Execution Pattern
+id: ac9d5e23-f3a4-4b78-c012-3456cdef7890
+status: experimental
+description: >
+  Detects PowerShell execution with the characteristic Empire/Covenant/Metasploit
+  command-line pattern: -noP -sta -w 1 -enc. Checks both direct PowerShell
+  execution and child processes spawned by encoded PowerShell (where the
+  pattern appears in ParentCommandLine).
+author: DetectForge
+date: 2026/02/11
+tags:
+  - attack.execution
+  - attack.t1059.001
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_direct_ps:
+    Image|endswith:
+      - "\\powershell.exe"
+      - "\\pwsh.exe"
+    CommandLine|contains:
+      - "-enc"
+      - "-encodedcommand"
+      - "-EncodedCommand"
+      - "-ec "
+  selection_empire_direct:
+    Image|endswith:
+      - "\\powershell.exe"
+      - "\\pwsh.exe"
+    CommandLine|contains|all:
+      - "-noP"
+      - "-sta"
+      - "-w 1"
+      - "-enc"
+  selection_parent_encoded:
+    ParentImage|endswith:
+      - "\\powershell.exe"
+      - "\\pwsh.exe"
+    ParentCommandLine|contains:
+      - "-enc"
+      - "-encodedcommand"
+      - "-EncodedCommand"
+  selection_parent_empire:
+    ParentImage|endswith:
+      - "\\powershell.exe"
+      - "\\pwsh.exe"
+    ParentCommandLine|contains|all:
+      - "-noP"
+      - "-sta"
+      - "-w 1"
+      - "-enc"
+  condition: selection_direct_ps or selection_empire_direct or selection_parent_encoded or selection_parent_empire
+falsepositives:
+  - Legitimate automation scripts using encoded commands for special character handling
+  - SCCM/Intune deployment scripts
+level: high

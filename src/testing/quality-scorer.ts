@@ -239,6 +239,22 @@ function scoreSigmaDetectionLogic(sigma: SigmaRule): number {
   const condScore = scoreConditionComplexity(condition);
   score += condScore;
 
+  // --- 6. Behavioral robustness check (0 to -3 pts, +1 bonus) ---
+  const toolSignatureAnalysis = analyzeToolSignatureDependence(sigma);
+  if (toolSignatureAnalysis.primaryIsToolSignature) {
+    score -= 3;  // severe penalty: primary detection relies on specific tool filename
+  } else if (
+    toolSignatureAnalysis.hasToolSignatureFields > 0 &&
+    !toolSignatureAnalysis.hasBehavioralFields
+  ) {
+    score -= 1;  // minor penalty: has tool names but no behavioral backup
+  }
+
+  // Bonus: reward rules with multiple detection variants (OR branches)
+  if (toolSignatureAnalysis.detectionVariantCount >= 3) {
+    score += 1;
+  }
+
   return score;
 }
 
@@ -485,6 +501,181 @@ function scoreFpFromDoc(doc: RuleDocumentation): number {
   }
 
   return clamp(score, 1, 10);
+}
+
+// ---------------------------------------------------------------------------
+// Tool-Signature Analysis
+// ---------------------------------------------------------------------------
+
+export interface ToolSignatureAnalysis {
+  /** Whether the primary selection's ONLY detection criterion is a tool-specific filename */
+  primaryIsToolSignature: boolean;
+  /** Count of fields with tool-specific filenames across all positive selections */
+  hasToolSignatureFields: number;
+  /** Whether any selection uses behavioral fields (GrantedAccess, CallTrace, etc.) */
+  hasBehavioralFields: boolean;
+  /** Number of distinct positive selection blocks (OR-level detection variants) */
+  detectionVariantCount: number;
+  /** Tool-specific filenames found in the detection */
+  toolNames: string[];
+}
+
+/**
+ * Known Windows system binaries.
+ * Detecting execution FROM these is behavioral detection — they are OS
+ * capabilities, not third-party tools. Rules that detect these are NOT
+ * tool-signature rules.
+ */
+export const KNOWN_SYSTEM_BINARIES = new Set([
+  'cmd.exe', 'powershell.exe', 'pwsh.exe', 'rundll32.exe', 'regsvr32.exe',
+  'mshta.exe', 'cscript.exe', 'wscript.exe', 'schtasks.exe', 'reg.exe',
+  'net.exe', 'net1.exe', 'wmic.exe', 'certutil.exe', 'bitsadmin.exe',
+  'msiexec.exe', 'cmstp.exe', 'vssadmin.exe', 'ntdsutil.exe', 'fsutil.exe',
+  'taskmgr.exe', 'services.exe', 'svchost.exe', 'lsass.exe', 'explorer.exe',
+  'taskhostw.exe', 'dllhost.exe', 'wmiprvse.exe',
+]);
+
+/**
+ * Behavioral field names that indicate OS-level detection (not tool-specific).
+ * Presence of these exempts from tool-signature penalty.
+ */
+export const BEHAVIORAL_DETECTION_FIELDS = new Set([
+  'grantedaccess', 'calltrace', 'targetimage', 'startfunction',
+  'parentcommandline', 'targetobject', 'sourceimage',
+]);
+
+/**
+ * Analyze a Sigma rule for tool-signature dependence.
+ *
+ * Checks whether the primary detection relies on specific tool filenames
+ * (e.g., mimikatz.exe, Seatbelt.exe) rather than behavioral indicators.
+ */
+export function analyzeToolSignatureDependence(sigma: SigmaRule): ToolSignatureAnalysis {
+  const detection = sigma.detection;
+  const condition = (detection.condition ?? '').toLowerCase();
+  const detectionKeys = Object.keys(detection).filter(k => k !== 'condition');
+
+  // Classify selections into positive vs filter
+  const positiveKeys = detectionKeys.filter(k => {
+    const nameLower = k.toLowerCase();
+    if (nameLower.startsWith('filter') || nameLower.startsWith('exclusion')) return false;
+    if (condition.includes(`not ${nameLower}`)) return false;
+    return true;
+  });
+
+  const result: ToolSignatureAnalysis = {
+    primaryIsToolSignature: false,
+    hasToolSignatureFields: 0,
+    hasBehavioralFields: false,
+    detectionVariantCount: positiveKeys.length,
+    toolNames: [],
+  };
+
+  // Count "1 of selection*" or "1 of them" patterns as having multiple variants
+  if (positiveKeys.length === 1) {
+    const block = detection[positiveKeys[0]];
+    if (Array.isArray(block)) {
+      result.detectionVariantCount = block.length;
+    }
+  }
+
+  let firstPositiveChecked = false;
+
+  for (const key of positiveKeys) {
+    const block = detection[key];
+    const items = Array.isArray(block) ? block : (typeof block === 'object' && block !== null ? [block] : []);
+
+    for (const item of items) {
+      if (typeof item !== 'object' || item === null) continue;
+      const fields = item as Record<string, unknown>;
+
+      let hasToolNameOnly = false;
+      let selectionFieldCount = 0;
+      let selectionBehavioralCount = 0;
+      let selectionToolSignatureCount = 0;
+
+      for (const rawKey of Object.keys(fields)) {
+        const fieldName = rawKey.split('|')[0].toLowerCase();
+        selectionFieldCount++;
+
+        // Check for behavioral fields
+        if (BEHAVIORAL_DETECTION_FIELDS.has(fieldName)) {
+          result.hasBehavioralFields = true;
+          selectionBehavioralCount++;
+          continue;
+        }
+
+        // Check if Image or OriginalFileName points to a tool (not system binary)
+        if (fieldName === 'image' || fieldName === 'originalfilename') {
+          const values = normalizeFieldValues(fields[rawKey]);
+          const toolValues = values.filter(v => isToolSpecificBinary(v));
+          if (toolValues.length > 0) {
+            selectionToolSignatureCount++;
+            result.hasToolSignatureFields++;
+            for (const tv of toolValues) {
+              const lastSlash = tv.lastIndexOf('\\');
+              const name = lastSlash >= 0 ? tv.substring(lastSlash + 1) : tv;
+              result.toolNames.push(name.replace(/^\*+/, '').replace(/\*+$/, ''));
+            }
+          }
+        }
+      }
+
+      // A selection is "tool signature only" if its ONLY criterion is a tool
+      // filename (Image/OriginalFileName not a system binary) with no
+      // behavioral fields alongside
+      if (selectionToolSignatureCount > 0 && selectionBehavioralCount === 0
+          && selectionFieldCount <= selectionToolSignatureCount) {
+        hasToolNameOnly = true;
+      }
+
+      // The first positive selection is the "primary"
+      if (!firstPositiveChecked && hasToolNameOnly) {
+        result.primaryIsToolSignature = true;
+      }
+    }
+
+    firstPositiveChecked = true;
+  }
+
+  return result;
+}
+
+/**
+ * Check if a Sigma field value references a tool-specific binary
+ * (not a known Windows system binary).
+ */
+function isToolSpecificBinary(value: string): boolean {
+  // Extract filename from the value
+  const lower = value.toLowerCase().trim();
+
+  // Handle wildcards: *\filename.exe → extract filename
+  let filename = lower;
+  const lastBackslash = lower.lastIndexOf('\\');
+  if (lastBackslash >= 0) {
+    filename = lower.substring(lastBackslash + 1);
+  }
+
+  // Remove trailing wildcards
+  filename = filename.replace(/^\*+/, '').replace(/\*+$/, '');
+
+  // Must end with .exe to be an executable check
+  if (!filename.endsWith('.exe')) return false;
+
+  // If it's a known system binary, it's behavioral detection
+  if (KNOWN_SYSTEM_BINARIES.has(filename)) return false;
+
+  // Otherwise it's a tool-specific binary
+  return true;
+}
+
+/**
+ * Normalize Sigma field values to a string array.
+ */
+function normalizeFieldValues(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(v => String(v));
+  if (value === null || value === undefined) return [];
+  return [String(value)];
 }
 
 // ---------------------------------------------------------------------------

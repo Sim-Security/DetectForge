@@ -1,0 +1,48 @@
+title: Remote Thread Creation in Unusual Target Process
+id: ce1f7a45-b5c6-4d90-e234-5678efab9012
+status: experimental
+description: >
+  Detects CreateRemoteThread calls targeting processes commonly abused for
+  process injection. Attackers inject code into benign processes to evade
+  detection and inherit the target's trust level. Filters out known-good
+  system thread creation sources.
+author: DetectForge
+date: 2026/02/11
+tags:
+  - attack.defense_evasion
+  - attack.t1055
+logsource:
+  product: windows
+  category: create_remote_thread
+detection:
+  selection_unusual_targets:
+    TargetImage|endswith:
+      - "\\notepad.exe"
+      - "\\calc.exe"
+      - "\\mspaint.exe"
+      - "\\spoolsv.exe"
+      - "\\svchost.exe"
+      - "\\explorer.exe"
+      - "\\rundll32.exe"
+      - "\\dllhost.exe"
+      - "\\lsass.exe"
+      - "\\winlogon.exe"
+      - "\\wininit.exe"
+      - "\\taskhost.exe"
+      - "\\taskhostw.exe"
+  filter_known_good_sources:
+    SourceImage:
+      - "C:\\Windows\\system32\\csrss.exe"
+      - "C:\\Windows\\system32\\services.exe"
+      - "C:\\Windows\\system32\\wininit.exe"
+      - "C:\\Windows\\system32\\lsass.exe"
+      - "C:\\Windows\\system32\\svchost.exe"
+  filter_program_files:
+    SourceImage|startswith:
+      - "C:\\Program Files\\"
+      - "C:\\Program Files (x86)\\"
+  condition: selection_unusual_targets and not filter_known_good_sources and not filter_program_files
+falsepositives:
+  - Legitimate software using remote threads for inter-process communication
+  - Anti-virus software performing process scanning
+level: high

@@ -29,13 +29,37 @@ detection:
       - "*WindowsIdentity.GetCurrent()*"
       - "*Get-Service*"
       - "*Get-NetIPConfiguration*"
+  selection_seatbelt:
+    Image|endswith: "\\Seatbelt.exe"
+  selection_powerview:
+    CommandLine|contains:
+      - "Find-LocalAdminAccess"
+      - "Get-NetComputer"
+      - "Get-NetUser"
+      - "Invoke-ShareFinder"
+  selection_powerview_parent:
+    ParentCommandLine|contains:
+      - "Find-LocalAdminAccess"
+      - "Get-NetComputer"
+      - "Invoke-ShareFinder"
+      - "invoke-"
+  selection_net_discovery:
+    Image|endswith:
+      - "\\net.exe"
+      - "\\net1.exe"
+    CommandLine|contains:
+      - " view"
+      - " share"
+      - " group"
+      - " localgroup"
+      - " user "
   filter_legitimate_admins:
     User:
       - NT AUTHORITY\SYSTEM
       - NT AUTHORITY\NETWORK SERVICE
     IntegrityLevel:
       - System
-  condition: (selection_native_tools or selection_powershell_recon) and not filter_legitimate_admins
+  condition: (selection_native_tools or selection_powershell_recon or selection_seatbelt or selection_powerview or selection_powerview_parent or selection_net_discovery) and not filter_legitimate_admins
 falsepositives:
   - System administration scripts for inventory management
   - Help desk troubleshooting activities

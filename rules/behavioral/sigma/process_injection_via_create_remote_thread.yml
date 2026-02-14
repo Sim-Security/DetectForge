@@ -1,0 +1,54 @@
+title: Process Injection via CreateRemoteThread into Unusual Target
+id: e7a3c501-d8f2-4b96-a123-9876fedc5432
+status: experimental
+description: >
+  Detects process injection via CreateRemoteThread (Sysmon EventID 8) where the
+  source process is a scripting engine or user-space binary injecting into
+  common injection targets. This complements the process_creation-based injection
+  rule by detecting the actual injection event rather than just process relationships.
+author: DetectForge
+date: 2026/02/12
+tags:
+  - attack.defense_evasion
+  - attack.t1055.001
+  - attack.t1055
+logsource:
+  product: windows
+  category: create_remote_thread
+detection:
+  selection_suspicious_sources:
+    SourceImage|endswith:
+      - "\\powershell.exe"
+      - "\\pwsh.exe"
+      - "\\python.exe"
+      - "\\cscript.exe"
+      - "\\wscript.exe"
+      - "\\mshta.exe"
+      - "\\rundll32.exe"
+  selection_injection_targets:
+    TargetImage|endswith:
+      - "\\notepad.exe"
+      - "\\calc.exe"
+      - "\\mspaint.exe"
+      - "\\explorer.exe"
+      - "\\svchost.exe"
+      - "\\rundll32.exe"
+      - "\\dllhost.exe"
+  selection_loadlibrary:
+    StartFunction|contains:
+      - "LoadLibrary"
+  filter_known_good:
+    SourceImage:
+      - "C:\\Windows\\system32\\csrss.exe"
+      - "C:\\Windows\\system32\\services.exe"
+      - "C:\\Windows\\system32\\svchost.exe"
+      - "C:\\Windows\\system32\\lsass.exe"
+  filter_av:
+    SourceImage|contains:
+      - "\\Windows Defender\\"
+      - "\\Microsoft Security Client\\"
+  condition: ((selection_suspicious_sources and selection_injection_targets) or selection_loadlibrary) and not filter_known_good and not filter_av
+falsepositives:
+  - Debugging tools that use CreateRemoteThread for process attachment
+  - Software with legitimate inter-process communication via thread injection
+level: high

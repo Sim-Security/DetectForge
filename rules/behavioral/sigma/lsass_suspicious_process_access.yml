@@ -1,0 +1,47 @@
+title: Suspicious LSASS Process Access via GrantedAccess Bitmask
+id: 8a7b3c01-f1e2-4d56-a890-1234abcd5678
+status: experimental
+description: >
+  Detects suspicious access to LSASS memory using GrantedAccess bitmask values
+  commonly associated with credential dumping tools. Catches in-memory attacks
+  (PowerShell Empire, Cobalt Strike) where no tool binary touches disk.
+  Based on SigmaHQ proc_access_win_lsass_memdump pattern.
+author: DetectForge
+date: 2026/02/11
+tags:
+  - attack.credential_access
+  - attack.t1003.001
+logsource:
+  product: windows
+  category: process_access
+detection:
+  selection_target:
+    TargetImage|endswith: "\\lsass.exe"
+  selection_access:
+    GrantedAccess:
+      - "0x1010"
+      - "0x1038"
+      - "0x1438"
+      - "0x143a"
+      - "0x1fffff"
+      - "0x01000"
+      - "0x1410"
+      - "0x40"
+  filter_system_processes:
+    SourceImage:
+      - "C:\\Windows\\system32\\wbem\\wmiprvse.exe"
+      - "C:\\Windows\\system32\\svchost.exe"
+      - "C:\\Windows\\system32\\lsm.exe"
+      - "C:\\Windows\\system32\\csrss.exe"
+      - "C:\\Windows\\system32\\wininit.exe"
+  filter_av:
+    SourceImage|contains:
+      - "\\Microsoft\\Windows Defender\\"
+      - "\\CrowdStrike\\"
+      - "\\Carbon Black\\"
+      - "\\Symantec\\"
+  condition: selection_target and selection_access and not filter_system_processes and not filter_av
+falsepositives:
+  - Legitimate security tools performing memory scanning
+  - EDR/AV products accessing LSASS for protection
+level: high

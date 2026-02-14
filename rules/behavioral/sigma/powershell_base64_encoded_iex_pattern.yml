@@ -1,0 +1,56 @@
+title: PowerShell Base64 Encoded IEX Command Pattern
+id: bd0e6f34-a4b5-4c89-d123-4567defa8901
+status: experimental
+description: >
+  Detects PowerShell execution with base64-encoded byte patterns commonly
+  found in malicious payloads. Checks both direct PowerShell CommandLine
+  and ParentCommandLine (for child processes spawned by encoded PowerShell).
+  Based on SigmaHQ proc_creation_win_powershell_base64_encoded_cmd.
+author: DetectForge
+date: 2026/02/11
+tags:
+  - attack.execution
+  - attack.t1059.001
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_direct:
+    Image|endswith:
+      - "\\powershell.exe"
+      - "\\pwsh.exe"
+    CommandLine|contains:
+      - "JAB"
+      - "SUVYI"
+      - "SQBFAFgA"
+      - "aWV4"
+      - "aQBlAHgA"
+      - "cwBhAGwA"
+      - "IABpAGUAeA"
+      - "dgBhAGwA"
+      - "RW52b2tl"
+      - "SW52b2tl"
+  selection_parent:
+    ParentImage|endswith:
+      - "\\powershell.exe"
+      - "\\pwsh.exe"
+    ParentCommandLine|contains:
+      - "JAB"
+      - "SUVYI"
+      - "SQBFAFgA"
+      - "aWV4"
+      - "aQBlAHgA"
+      - "cwBhAGwA"
+      - "IABpAGUAeA"
+      - "dgBhAGwA"
+      - "RW52b2tl"
+      - "SW52b2tl"
+  filter_short_commands:
+    CommandLine|endswith:
+      - ".ps1"
+      - ".psm1"
+  condition: (selection_direct or selection_parent) and not filter_short_commands
+falsepositives:
+  - Legitimate encoded PowerShell scripts from management tools
+  - Software deployment systems using encoded commands
+level: high

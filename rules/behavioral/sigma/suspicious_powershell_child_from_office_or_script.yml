@@ -1,0 +1,54 @@
+title: Suspicious Child Process Spawned from Office Application or Script Host
+id: df2a8b56-c6d7-4ea1-f345-6789fab01234
+status: experimental
+description: >
+  Detects suspicious child process creation from Microsoft Office applications,
+  Windows Script Host, or other LOLBin parent processes. Attackers commonly use
+  macro-enabled documents or script engines to spawn PowerShell, cmd, or other
+  tools for initial access and execution. Based on SigmaHQ parent-child anomaly patterns.
+author: DetectForge
+date: 2026/02/11
+tags:
+  - attack.execution
+  - attack.t1059.001
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_parent_office:
+    ParentImage|endswith:
+      - "\\winword.exe"
+      - "\\excel.exe"
+      - "\\powerpnt.exe"
+      - "\\outlook.exe"
+      - "\\msaccess.exe"
+      - "\\mspub.exe"
+  selection_parent_script:
+    ParentImage|endswith:
+      - "\\wscript.exe"
+      - "\\cscript.exe"
+      - "\\mshta.exe"
+  selection_parent_lolbin:
+    ParentImage|endswith:
+      - "\\certutil.exe"
+      - "\\regsvr32.exe"
+      - "\\msiexec.exe"
+  selection_suspicious_child:
+    Image|endswith:
+      - "\\cmd.exe"
+      - "\\powershell.exe"
+      - "\\pwsh.exe"
+      - "\\rundll32.exe"
+      - "\\regsvr32.exe"
+      - "\\mshta.exe"
+      - "\\wscript.exe"
+      - "\\cscript.exe"
+      - "\\certutil.exe"
+      - "\\bitsadmin.exe"
+      - "\\schtasks.exe"
+  condition: (selection_parent_office or selection_parent_script or selection_parent_lolbin) and selection_suspicious_child
+falsepositives:
+  - Legitimate Office add-ins that spawn helper processes
+  - Administrative scripts run via Windows Script Host
+  - Software installation triggered from Office macros
+level: high
