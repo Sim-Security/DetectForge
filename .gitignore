@@ -15,6 +15,7 @@ data/mitre-attack/*.json
 data/sigmahq-rules/**/*.yml
 data/threat-reports/reports/
 data/log-samples/
+data/real-attack-logs/
 
 # Test artifacts
 coverage/
