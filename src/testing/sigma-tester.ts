@@ -24,6 +24,7 @@ export interface SigmaTestResult {
   matchedSelections: string[];
   failedSelections: string[];
   evaluationDetails: string;
+  aggregationSkipped?: boolean;
 }
 
 export interface SigmaTestSuiteResult {
@@ -77,6 +78,9 @@ export function evaluateSigmaRule(
   // Parse and evaluate the condition expression
   const matched = evaluateCondition(condition, selectionResults);
 
+  // Detect if an aggregation pipe was present
+  const aggregationSkipped = typeof condition === 'string' && condition.includes('|');
+
   const details = buildEvaluationDetails(
     selectionResults,
     condition,
@@ -90,6 +94,7 @@ export function evaluateSigmaRule(
     matchedSelections,
     failedSelections,
     evaluationDetails: details,
+    ...(aggregationSkipped ? { aggregationSkipped: true } : {}),
   };
 }
 
@@ -275,6 +280,11 @@ function matchSingleValue(
   const logStr = String(logValue);
   const expectedStr = String(expected);
 
+  // Check for "cidr" modifier (IP range matching)
+  if (modifiers.includes('cidr')) {
+    return matchCidr(logStr, expectedStr);
+  }
+
   // Check for "re" modifier (regex)
   if (modifiers.includes('re')) {
     try {
@@ -367,6 +377,40 @@ function wildcardToRegex(pattern: string): string {
     }
   }
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// CIDR Matching
+// ---------------------------------------------------------------------------
+
+/**
+ * Match an IP address against a CIDR range (e.g. "10.0.0.0/24").
+ */
+function matchCidr(ip: string, cidr: string): boolean {
+  const [subnet, prefixStr] = cidr.split('/');
+  if (!prefixStr) return ip === cidr;
+  const prefix = parseInt(prefixStr, 10);
+  if (isNaN(prefix) || prefix < 0 || prefix > 32) return false;
+  const ipNum = ipToNumber(ip);
+  const subnetNum = ipToNumber(subnet);
+  if (ipNum === null || subnetNum === null) return false;
+  const mask = prefix === 0 ? 0 : (~0 << (32 - prefix)) >>> 0;
+  return (ipNum & mask) === (subnetNum & mask);
+}
+
+/**
+ * Convert an IPv4 address string to a 32-bit unsigned integer.
+ */
+function ipToNumber(ip: string): number | null {
+  const parts = ip.split('.');
+  if (parts.length !== 4) return null;
+  let num = 0;
+  for (const p of parts) {
+    const octet = parseInt(p, 10);
+    if (isNaN(octet) || octet < 0 || octet > 255) return null;
+    num = (num << 8) | octet;
+  }
+  return num >>> 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -491,7 +535,11 @@ function evaluateCondition(
   condition: string,
   selectionResults: Map<string, boolean>,
 ): boolean {
-  const tokens = tokenize(condition);
+  // Detect aggregation pipe — evaluate only the boolean selection part
+  const pipeIdx = condition.indexOf('|');
+  const booleanPart = pipeIdx >= 0 ? condition.substring(0, pipeIdx).trim() : condition;
+
+  const tokens = tokenize(booleanPart);
   let pos = 0;
 
   function peek(): Token | undefined {

@@ -244,6 +244,90 @@ describe('generateTestLogs', () => {
   });
 
   // =========================================================================
+  // Field Correlations
+  // =========================================================================
+
+  describe('field correlations', () => {
+    it('attack log with Image=powershell.exe has CommandLine starting with powershell', () => {
+      const rule = makeRule({
+        selection: {
+          Image: '*\\powershell.exe',
+          'CommandLine|contains': '-enc',
+        },
+        condition: 'selection',
+      });
+
+      const result = generateTestLogs(rule, { attackLogCount: 3 });
+
+      for (const log of result.attackLogs) {
+        const cmdLine = String(log.CommandLine).toLowerCase();
+        expect(cmdLine).toMatch(/^powershell/);
+      }
+    });
+
+    it('attack log with ParentImage=services.exe has User containing SYSTEM', () => {
+      const rule = makeRule({
+        selection: {
+          Image: '*\\cmd.exe',
+          ParentImage: '*\\services.exe',
+        },
+        condition: 'selection',
+      });
+
+      const result = generateTestLogs(rule, { attackLogCount: 3 });
+
+      for (const log of result.attackLogs) {
+        expect(String(log.User)).toContain('SYSTEM');
+      }
+    });
+
+    it('does not double-prefix if CommandLine already starts with binary name', () => {
+      const rule = makeRule({
+        selection: {
+          Image: '*\\cmd.exe',
+          CommandLine: 'cmd.exe /c whoami',
+        },
+        condition: 'selection',
+      });
+
+      const result = generateTestLogs(rule, { attackLogCount: 1 });
+      const cmdLine = String(result.attackLogs[0].CommandLine);
+      // Should not start with "cmd.exe cmd.exe"
+      expect(cmdLine).not.toMatch(/^cmd\.exe\s+cmd\.exe/i);
+    });
+
+    it('benign template logs are included in generated set', () => {
+      const rule = makeRule({
+        selection: { Image: '*\\cmd.exe' },
+        condition: 'selection',
+      });
+
+      // Generate enough benign logs to get template-based ones (every 3rd)
+      const result = generateTestLogs(rule, { benignLogCount: 10 });
+
+      // The 1st benign log (index 0) should be template-based
+      // svchost.exe template has SYSTEM user
+      const firstBenign = result.benignLogs[0];
+      expect(firstBenign.User).toBeDefined();
+    });
+
+    it('benign template logs have correlated field values', () => {
+      const rule = makeRule({
+        selection: { Image: '*\\cmd.exe', User: 'admin' },
+        condition: 'selection',
+      });
+
+      const result = generateTestLogs(rule, { benignLogCount: 9 });
+
+      // Template at index 0 (svchost) has ParentImage=services.exe and User=SYSTEM
+      const templateLog = result.benignLogs[0];
+      if (String(templateLog.ParentImage || '').includes('services.exe')) {
+        expect(String(templateLog.User)).toContain('SYSTEM');
+      }
+    });
+  });
+
+  // =========================================================================
   // Various Rule Shapes
   // =========================================================================
 

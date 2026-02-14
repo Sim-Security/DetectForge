@@ -404,6 +404,55 @@ describe('modifiers', () => {
     });
   });
 
+  describe('|cidr', () => {
+    it('matches IP within CIDR range', () => {
+      const rule = makeRule({
+        selection: { 'SourceIp|cidr': '10.0.0.0/24' },
+        condition: 'selection',
+      });
+
+      expect(
+        evaluateSigmaRule(rule, { SourceIp: '10.0.0.5' }).matched,
+      ).toBe(true);
+    });
+
+    it('rejects IP outside CIDR range', () => {
+      const rule = makeRule({
+        selection: { 'SourceIp|cidr': '10.0.0.0/24' },
+        condition: 'selection',
+      });
+
+      expect(
+        evaluateSigmaRule(rule, { SourceIp: '10.0.1.5' }).matched,
+      ).toBe(false);
+    });
+
+    it('/32 matches exact IP only', () => {
+      const rule = makeRule({
+        selection: { 'SourceIp|cidr': '192.168.1.100/32' },
+        condition: 'selection',
+      });
+
+      expect(
+        evaluateSigmaRule(rule, { SourceIp: '192.168.1.100' }).matched,
+      ).toBe(true);
+      expect(
+        evaluateSigmaRule(rule, { SourceIp: '192.168.1.101' }).matched,
+      ).toBe(false);
+    });
+
+    it('/0 matches any IP', () => {
+      const rule = makeRule({
+        selection: { 'SourceIp|cidr': '0.0.0.0/0' },
+        condition: 'selection',
+      });
+
+      expect(
+        evaluateSigmaRule(rule, { SourceIp: '172.16.50.99' }).matched,
+      ).toBe(true);
+    });
+  });
+
   describe('|all', () => {
     it('requires ALL values to match (AND logic)', () => {
       const rule = makeRule({
@@ -648,6 +697,47 @@ describe('condition parsing', () => {
       expect(
         evaluateSigmaRule(rule, { Image: 'cmd.exe', User: 'john' })
           .matched,
+      ).toBe(false);
+    });
+  });
+
+  describe('aggregation conditions', () => {
+    it('evaluates boolean part of "selection | count() > 5"', () => {
+      const rule = makeRule({
+        selection: { Image: '*\\cmd.exe' },
+        condition: 'selection | count() by SourceIp > 5',
+      });
+
+      // The selection matches, so boolean part is true
+      const result = evaluateSigmaRule(rule, {
+        Image: 'C:\\Windows\\System32\\cmd.exe',
+        SourceIp: '10.0.0.1',
+      });
+      expect(result.matched).toBe(true);
+      expect(result.aggregationSkipped).toBe(true);
+    });
+
+    it('evaluates boolean prefix "sel1 and sel2 | count() > 5"', () => {
+      const rule = makeRule({
+        sel1: { Image: '*\\cmd.exe' },
+        sel2: { 'CommandLine|contains': 'whoami' },
+        condition: 'sel1 and sel2 | count(User) by SourceIp > 5',
+      });
+
+      // Both sel1 and sel2 match
+      expect(
+        evaluateSigmaRule(rule, {
+          Image: 'C:\\Windows\\System32\\cmd.exe',
+          CommandLine: 'cmd /c whoami',
+        }).matched,
+      ).toBe(true);
+
+      // Only sel1 matches — AND fails
+      expect(
+        evaluateSigmaRule(rule, {
+          Image: 'C:\\Windows\\System32\\cmd.exe',
+          CommandLine: 'dir',
+        }).matched,
       ).toBe(false);
     });
   });

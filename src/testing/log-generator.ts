@@ -345,6 +345,9 @@ function buildAttackLog(
   // Add filler fields for realism
   addRealisticFillerFields(log, index);
 
+  // Apply field correlations for realistic inter-field relationships
+  applyFieldCorrelations(log);
+
   return log;
 }
 
@@ -429,6 +432,22 @@ function buildBenignLog(
     for (const field of sel.fields) {
       allFields.add(field.fieldName);
     }
+  }
+
+  // Use template-based benign logs for ~30% of entries (every 3rd log)
+  if (index % 3 === 0 && BENIGN_LOG_TEMPLATES.length > 0) {
+    const template = BENIGN_LOG_TEMPLATES[index % BENIGN_LOG_TEMPLATES.length];
+    for (const [key, value] of Object.entries(template)) {
+      log[key] = value;
+    }
+    // Add any remaining detection fields not covered by template
+    for (const fieldName of allFields) {
+      if (!(fieldName in log)) {
+        log[fieldName] = pickBenignValue(fieldName, index);
+      }
+    }
+    addRealisticFillerFields(log, index);
+    return log;
   }
 
   // Determine if this log should be a partial-match edge case
@@ -533,6 +552,465 @@ function addRealisticFillerFields(log: LogEntry, index: number): void {
       log[filler.key] = filler.values[index % filler.values.length];
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Field Correlations — ensure synthetic logs have realistic field relationships
+// ---------------------------------------------------------------------------
+
+interface FieldCorrelation {
+  triggerField: string;
+  triggerContains: string;
+  dependentField: string;
+  action: 'prefix-commandline' | 'set-value';
+  value: string;
+}
+
+const FIELD_CORRELATIONS: FieldCorrelation[] = [
+  // CommandLine should reference the Image binary
+  { triggerField: 'Image', triggerContains: 'powershell.exe', dependentField: 'CommandLine', action: 'prefix-commandline', value: 'powershell.exe' },
+  { triggerField: 'Image', triggerContains: 'cmd.exe', dependentField: 'CommandLine', action: 'prefix-commandline', value: 'cmd.exe' },
+  { triggerField: 'Image', triggerContains: 'rundll32.exe', dependentField: 'CommandLine', action: 'prefix-commandline', value: 'rundll32.exe' },
+  { triggerField: 'Image', triggerContains: 'reg.exe', dependentField: 'CommandLine', action: 'prefix-commandline', value: 'reg.exe' },
+  { triggerField: 'Image', triggerContains: 'schtasks.exe', dependentField: 'CommandLine', action: 'prefix-commandline', value: 'schtasks.exe' },
+  { triggerField: 'Image', triggerContains: 'net.exe', dependentField: 'CommandLine', action: 'prefix-commandline', value: 'net.exe' },
+  { triggerField: 'Image', triggerContains: 'wmic.exe', dependentField: 'CommandLine', action: 'prefix-commandline', value: 'wmic.exe' },
+  // services.exe parent implies SYSTEM user
+  { triggerField: 'ParentImage', triggerContains: 'services.exe', dependentField: 'User', action: 'set-value', value: 'NT AUTHORITY\\SYSTEM' },
+  // wmiprvse.exe parent implies NETWORK SERVICE user
+  { triggerField: 'ParentImage', triggerContains: 'wmiprvse.exe', dependentField: 'User', action: 'set-value', value: 'NT AUTHORITY\\NETWORK SERVICE' },
+];
+
+/**
+ * Apply field correlations to make synthetic logs more realistic.
+ *
+ * For 'prefix-commandline': if CommandLine exists but doesn't start with
+ * the binary name, prepend it.
+ * For 'set-value': override the dependent field with the correlated value.
+ */
+function applyFieldCorrelations(log: LogEntry): void {
+  for (const corr of FIELD_CORRELATIONS) {
+    const triggerVal = log[corr.triggerField];
+    if (typeof triggerVal !== 'string') continue;
+    if (!triggerVal.toLowerCase().includes(corr.triggerContains.toLowerCase())) continue;
+
+    if (corr.action === 'prefix-commandline') {
+      const depVal = log[corr.dependentField];
+      if (typeof depVal !== 'string') continue;
+      const depLower = depVal.toLowerCase();
+      const prefixLower = corr.value.toLowerCase().replace('.exe', '');
+      // Don't double-prefix if already starts with the binary name
+      if (!depLower.startsWith(prefixLower)) {
+        log[corr.dependentField] = corr.value + ' ' + depVal;
+      }
+    } else if (corr.action === 'set-value') {
+      log[corr.dependentField] = corr.value;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Benign Log Templates — coherent realistic log entries
+// ---------------------------------------------------------------------------
+
+const BENIGN_LOG_TEMPLATES: LogEntry[] = [
+  {
+    Image: 'C:\\Windows\\System32\\svchost.exe',
+    CommandLine: 'svchost.exe -k netsvcs -p -s Schedule',
+    ParentImage: 'C:\\Windows\\System32\\services.exe',
+    User: 'NT AUTHORITY\\SYSTEM',
+    IntegrityLevel: 'System',
+  },
+  {
+    Image: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    CommandLine: '"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" --type=renderer --lang=en-US',
+    ParentImage: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    User: 'WORKSTATION\\john.doe',
+    IntegrityLevel: 'Medium',
+  },
+  {
+    Image: 'C:\\Windows\\System32\\svchost.exe',
+    CommandLine: 'svchost.exe -k LocalServiceNetworkRestricted -p -s WinHttpAutoProxySvc',
+    ParentImage: 'C:\\Windows\\System32\\services.exe',
+    User: 'NT AUTHORITY\\LOCAL SERVICE',
+    IntegrityLevel: 'System',
+  },
+  {
+    Image: 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe',
+    CommandLine: 'powershell.exe -ExecutionPolicy RemoteSigned -File C:\\Scripts\\maintenance.ps1',
+    ParentImage: 'C:\\Windows\\System32\\svchost.exe',
+    User: 'WORKSTATION\\admin',
+    IntegrityLevel: 'High',
+  },
+  {
+    Image: 'C:\\Windows\\System32\\reg.exe',
+    CommandLine: 'reg.exe query HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies',
+    ParentImage: 'C:\\Windows\\System32\\svchost.exe',
+    User: 'NT AUTHORITY\\SYSTEM',
+    IntegrityLevel: 'System',
+  },
+  {
+    Image: 'C:\\Windows\\System32\\schtasks.exe',
+    CommandLine: 'schtasks.exe /Run /TN "\\Microsoft\\Windows\\WindowsUpdate\\Scheduled Start"',
+    ParentImage: 'C:\\Windows\\System32\\svchost.exe',
+    User: 'NT AUTHORITY\\SYSTEM',
+    IntegrityLevel: 'System',
+  },
+  {
+    Image: 'C:\\Windows\\explorer.exe',
+    CommandLine: 'C:\\Windows\\explorer.exe /factory,{75dff2b7-6936-4c06-a8bb-676a7b00b24b}',
+    ParentImage: 'C:\\Windows\\System32\\userinit.exe',
+    User: 'WORKSTATION\\john.doe',
+    IntegrityLevel: 'Medium',
+  },
+  {
+    Image: 'C:\\Windows\\System32\\SearchIndexer.exe',
+    CommandLine: 'C:\\Windows\\System32\\SearchIndexer.exe /Embedding',
+    ParentImage: 'C:\\Windows\\System32\\services.exe',
+    User: 'NT AUTHORITY\\SYSTEM',
+    IntegrityLevel: 'System',
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Evasion Variant Generation
+// ---------------------------------------------------------------------------
+
+export interface EvasionResult {
+  originalTpRate: number;
+  evasionTpRate: number;
+  resilienceScore: number;  // evasionTpRate / originalTpRate (0-1)
+  mutationsApplied: string[];
+}
+
+/**
+ * Known Windows system binary filenames.
+ * Detecting execution FROM these is behavioral detection (the OS capability
+ * is the indicator, not a third-party tool). These should NOT be renamed
+ * during evasion testing.
+ */
+const SYSTEM_BINARIES = new Set([
+  'cmd.exe', 'powershell.exe', 'pwsh.exe', 'rundll32.exe', 'regsvr32.exe',
+  'mshta.exe', 'cscript.exe', 'wscript.exe', 'schtasks.exe', 'reg.exe',
+  'net.exe', 'net1.exe', 'wmic.exe', 'certutil.exe', 'bitsadmin.exe',
+  'msiexec.exe', 'cmstp.exe', 'vssadmin.exe', 'ntdsutil.exe', 'fsutil.exe',
+  'taskmgr.exe', 'services.exe', 'svchost.exe', 'lsass.exe', 'explorer.exe',
+  'taskhostw.exe', 'dllhost.exe', 'wmiprvse.exe', 'conhost.exe',
+  'systeminfo.exe', 'hostname.exe', 'ipconfig.exe', 'whoami.exe',
+  'netstat.exe', 'sc.exe', 'tasklist.exe', 'wininit.exe', 'winlogon.exe',
+  'spoolsv.exe', 'searchindexer.exe', 'runtimebroker.exe',
+]);
+
+/** Evasion replacement names for renamed tools */
+const EVASION_TOOL_NAMES = [
+  'updater.exe', 'svc_helper.exe', 'custom_tool.exe',
+  'maintenance.exe', 'health_check.exe',
+];
+
+/** Evasion paths to replace well-known tool directories */
+const EVASION_PATHS = [
+  'C:\\Users\\Public\\',
+  'C:\\Windows\\Temp\\',
+  'C:\\ProgramData\\',
+  'C:\\Users\\admin\\AppData\\Local\\Temp\\',
+];
+
+/** Environment variable path substitutions for evasion */
+const ENV_SUBSTITUTIONS: [string, string][] = [
+  ['C:\\Windows\\System32\\', '%SystemRoot%\\System32\\'],
+  ['C:\\Windows\\', '%WINDIR%\\'],
+];
+
+/** Keywords for caret insertion evasion */
+const CARET_KEYWORDS = ['powershell', 'invoke', 'bypass', 'hidden', 'downloadstring', 'iex'];
+
+/** Behavioral fields that represent OS-level indicators — never mutated */
+const BEHAVIORAL_FIELDS = new Set([
+  'GrantedAccess', 'CallTrace', 'TargetImage', 'SourceImage', 'StartFunction',
+]);
+
+/** PowerShell argument format variations */
+const PS_ARG_VARIANTS: [string, string[]][] = [
+  ['-encodedcommand', ['-enc', '-e', '-EncodedCommand', '-EC']],
+  ['-executionpolicy', ['-ep', '-exec', '-ExecutionPolicy']],
+  ['-windowstyle', ['-w', '-WindowStyle']],
+  ['-noprofile', ['-noP', '-NoProfile', '-nop']],
+];
+
+/**
+ * Generate evasion variants of attack logs by mutating tool-specific fields
+ * while preserving behavioral indicators.
+ *
+ * Returns mutated copies of the original attack logs plus a list of which
+ * mutations were applied.
+ */
+export function generateEvasionVariants(
+  attackLogs: LogEntry[],
+): { mutatedLogs: LogEntry[]; mutationsApplied: string[] } {
+  const mutatedLogs: LogEntry[] = [];
+  const mutationsApplied = new Set<string>();
+
+  for (const log of attackLogs) {
+    const mutated = { ...log };
+    let anyMutation = false;
+
+    // 1. Rename executables in Image field
+    if (typeof mutated.Image === 'string') {
+      const renamed = renameExecutable(mutated.Image);
+      if (renamed !== mutated.Image) {
+        mutated.Image = renamed;
+        mutationsApplied.add('rename-executable');
+        anyMutation = true;
+      }
+    }
+
+    // 2. Rename executables in OriginalFileName
+    if (typeof mutated.OriginalFileName === 'string') {
+      const renamed = renameExecutable(
+        mutated.OriginalFileName,
+      );
+      if (renamed !== mutated.OriginalFileName) {
+        mutated.OriginalFileName = renamed;
+        mutationsApplied.add('rename-original-filename');
+        anyMutation = true;
+      }
+    }
+
+    // 3. Change paths in Image (keep filename, change directory)
+    if (typeof mutated.Image === 'string') {
+      const pathChanged = changeToolPath(mutated.Image);
+      if (pathChanged !== mutated.Image) {
+        mutated.Image = pathChanged;
+        mutationsApplied.add('change-path');
+        anyMutation = true;
+      }
+    }
+
+    // 4. Vary PowerShell argument format in CommandLine
+    if (typeof mutated.CommandLine === 'string') {
+      const varied = varyArgumentFormat(mutated.CommandLine);
+      if (varied !== mutated.CommandLine) {
+        mutated.CommandLine = varied;
+        mutationsApplied.add('vary-argument-format');
+        anyMutation = true;
+      }
+    }
+
+    // 5. Rename tool references in CommandLine (but not system binaries)
+    if (typeof mutated.CommandLine === 'string') {
+      const renamed = renameToolInCommandLine(mutated.CommandLine);
+      if (renamed !== mutated.CommandLine) {
+        mutated.CommandLine = renamed;
+        mutationsApplied.add('rename-tool-in-commandline');
+        anyMutation = true;
+      }
+    }
+
+    // 6. Environment variable substitution in CommandLine paths
+    if (typeof mutated.CommandLine === 'string') {
+      const envSubbed = applyEnvSubstitution(mutated.CommandLine);
+      if (envSubbed !== mutated.CommandLine) {
+        mutated.CommandLine = envSubbed;
+        mutationsApplied.add('env-var-substitution');
+        anyMutation = true;
+      }
+    }
+
+    // 7. Caret insertion in CommandLine keywords (cmd.exe evasion)
+    if (typeof mutated.CommandLine === 'string') {
+      const careted = applyCaretInsertion(mutated.CommandLine);
+      if (careted !== mutated.CommandLine) {
+        mutated.CommandLine = careted;
+        mutationsApplied.add('caret-insertion');
+        anyMutation = true;
+      }
+    }
+
+    // 8. Case randomization in CommandLine (~20% of chars)
+    if (typeof mutated.CommandLine === 'string') {
+      const caseRandom = applyCaseRandomization(mutated.CommandLine);
+      if (caseRandom !== mutated.CommandLine) {
+        mutated.CommandLine = caseRandom;
+        mutationsApplied.add('case-randomization');
+        anyMutation = true;
+      }
+    }
+
+    // Only include if at least one mutation was applied
+    if (anyMutation) {
+      mutatedLogs.push(mutated);
+    } else {
+      // No mutation possible — include original to keep log count stable
+      mutatedLogs.push(mutated);
+    }
+  }
+
+  return {
+    mutatedLogs,
+    mutationsApplied: [...mutationsApplied],
+  };
+}
+
+/**
+ * Extract the filename from a Windows path.
+ */
+function extractFilename(imagePath: string): string {
+  const parts = imagePath.split('\\');
+  return parts[parts.length - 1].toLowerCase();
+}
+
+/**
+ * Rename an executable if it's a tool (not a system binary).
+ */
+function renameExecutable(imagePath: string): string {
+  const filename = extractFilename(imagePath);
+  if (SYSTEM_BINARIES.has(filename)) return imagePath;
+
+  // It's a tool binary — rename it
+  const dir = imagePath.substring(0, imagePath.lastIndexOf('\\') + 1);
+  const newName = EVASION_TOOL_NAMES[
+    Math.abs(hashString(imagePath)) % EVASION_TOOL_NAMES.length
+  ];
+  return dir + newName;
+}
+
+/**
+ * Change the directory path of a tool binary (not system binaries).
+ */
+function changeToolPath(imagePath: string): string {
+  const filename = extractFilename(imagePath);
+  if (SYSTEM_BINARIES.has(filename)) return imagePath;
+
+  // Replace the directory with an evasion path
+  const newDir = EVASION_PATHS[
+    Math.abs(hashString(imagePath)) % EVASION_PATHS.length
+  ];
+  return newDir + filename;
+}
+
+/**
+ * Vary PowerShell argument format abbreviations.
+ */
+function varyArgumentFormat(cmdLine: string): string {
+  let result = cmdLine;
+  for (const [canonical, variants] of PS_ARG_VARIANTS) {
+    const lowerCmd = result.toLowerCase();
+    const idx = lowerCmd.indexOf(canonical);
+    if (idx >= 0) {
+      const variant = variants[Math.abs(hashString(cmdLine)) % variants.length];
+      result = result.substring(0, idx) + variant + result.substring(idx + canonical.length);
+    }
+  }
+  return result;
+}
+
+/**
+ * Rename tool name references in CommandLine (not system binaries).
+ */
+function renameToolInCommandLine(cmdLine: string): string {
+  // Find .exe references that are tool names
+  const exePattern = /([a-zA-Z0-9_-]+)\.exe/gi;
+  return cmdLine.replace(exePattern, (match, name) => {
+    const lower = (name + '.exe').toLowerCase();
+    if (SYSTEM_BINARIES.has(lower)) return match;
+    // Replace with evasion name
+    const newName = EVASION_TOOL_NAMES[
+      Math.abs(hashString(name)) % EVASION_TOOL_NAMES.length
+    ];
+    return newName;
+  });
+}
+
+/**
+ * Replace well-known path prefixes in CommandLine with environment variable
+ * equivalents. Does NOT touch the Image field.
+ */
+function applyEnvSubstitution(cmdLine: string): string {
+  let result = cmdLine;
+  for (const [literal, envVar] of ENV_SUBSTITUTIONS) {
+    // Case-insensitive replacement in CommandLine text
+    const idx = result.toLowerCase().indexOf(literal.toLowerCase());
+    if (idx >= 0) {
+      result = result.substring(0, idx) + envVar + result.substring(idx + literal.length);
+      return result; // Apply one substitution per log for clarity
+    }
+  }
+  return result;
+}
+
+/**
+ * Insert carets (^) into known keywords in CommandLine to evade string-match
+ * detection. This is a common cmd.exe evasion technique.
+ */
+function applyCaretInsertion(cmdLine: string): string {
+  let result = cmdLine;
+  for (const keyword of CARET_KEYWORDS) {
+    const lowerResult = result.toLowerCase();
+    const idx = lowerResult.indexOf(keyword);
+    if (idx >= 0) {
+      const original = result.substring(idx, idx + keyword.length);
+      // Insert caret at deterministic positions (after 2nd and 5th char)
+      let careted = '';
+      for (let i = 0; i < original.length; i++) {
+        careted += original[i];
+        if (i === 1 || i === 4) {
+          careted += '^';
+        }
+      }
+      result = result.substring(0, idx) + careted + result.substring(idx + keyword.length);
+      return result; // Apply one caret insertion per log
+    }
+  }
+  return result;
+}
+
+/**
+ * Deterministically toggle case of ~20% of alphabetic characters in CommandLine.
+ * Tests whether rules use case-insensitive matching properly.
+ * Preserves system binary names (e.g. rundll32.exe) to avoid breaking other mutations.
+ */
+function applyCaseRandomization(cmdLine: string): string {
+  // Find positions of system binary names to protect them
+  const protectedRanges: [number, number][] = [];
+  const lowerCmd = cmdLine.toLowerCase();
+  for (const binary of SYSTEM_BINARIES) {
+    let searchFrom = 0;
+    while (true) {
+      const idx = lowerCmd.indexOf(binary, searchFrom);
+      if (idx < 0) break;
+      protectedRanges.push([idx, idx + binary.length]);
+      searchFrom = idx + binary.length;
+    }
+  }
+
+  const h = Math.abs(hashString(cmdLine));
+  const chars = cmdLine.split('');
+  let changed = false;
+  for (let i = 0; i < chars.length; i++) {
+    // Skip characters inside protected system binary names
+    if (protectedRanges.some(([start, end]) => i >= start && i < end)) continue;
+
+    const ch = chars[i];
+    if (/[a-zA-Z]/.test(ch)) {
+      // Toggle ~20% of alpha chars using hash-derived determinism
+      if ((h + i * 7) % 5 === 0) {
+        chars[i] = ch === ch.toLowerCase() ? ch.toUpperCase() : ch.toLowerCase();
+        changed = true;
+      }
+    }
+  }
+  return changed ? chars.join('') : cmdLine;
+}
+
+/**
+ * Simple deterministic hash for consistent mutations.
+ */
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+  }
+  return hash;
 }
 
 // ---------------------------------------------------------------------------
